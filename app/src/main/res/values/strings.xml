@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">VideoEditPoc</string>
+    <string name="overlay_text">Text\n</string>
+    <string name="overlay_text_color">Text color\t\t\t</string>
+    <string name="overlay_alpha">alpha</string>
+    <string name="bitmap_overlay_settings">Specify bitmap overlay settings</string>
+    <string name="select_video_effects">select video effects\n</string>
+    <string name="export">Export</string>
+    <string name="emoji">I am happy &#128522;</string>
+</resources>
