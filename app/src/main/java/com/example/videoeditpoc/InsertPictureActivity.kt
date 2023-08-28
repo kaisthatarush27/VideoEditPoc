@@ -40,20 +40,12 @@ class InsertPictureActivity : AppCompatActivity() {
         binding = ActivityInsertPictureBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        binding.selectVideoUsingFfmpeg.setOnClickListener {
+        binding.selectVideoBtn.setOnClickListener {
             handler.removeCallbacksAndMessages(null)
             selectVideoLauncherUsingFfmpeg.launch("video/*")
         }
 
-        binding.insertPicture.setOnClickListener {
-//            if (input_video_uri_ffmpeg != null) {
-//                insertImage()
-//            } else {
-//                Toast.makeText(
-//                    this@InsertPictureActivity, "Please upload video", Toast.LENGTH_LONG
-//                ).show()
-//                return@setOnClickListener
-//            }
+        binding.insertPictureBtn.setOnClickListener {
             if (ContextCompat.checkSelfPermission(
                     this, Manifest.permission.READ_EXTERNAL_STORAGE
                 ) == PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(
@@ -80,53 +72,8 @@ class InsertPictureActivity : AppCompatActivity() {
             ).show()
         }
 
-        binding.reverseVideoActivity.setOnClickListener {
+        binding.reverseVideoBtnBtn.setOnClickListener {
             startActivity(Intent(this, MainActivity::class.java))
-        }
-
-        binding.videoView.setOnPreparedListener { mp ->
-//            get the duration of the video
-            val duration = mp.duration / 1000
-            //initially set the left TextView to "00:00:00"
-            binding.textleft.text = "00:00:00"
-            //initially set the right Text-View to the video length
-            //the getTime() method returns a formatted string in hh:mm:ss
-            binding.textright.text = getTime(mp.duration / 1000)
-            //this will run he video in loop i.e. the video won't stop
-            //when it reaches its duration
-            mp.isLooping = true
-
-            //set up the initial values of binding.rangeSeekBar
-            binding.rangeSeekBar.setRangeValues(0, duration)
-            binding.rangeSeekBar.selectedMinValue = 0
-            binding.rangeSeekBar.selectedMaxValue = duration
-            binding.rangeSeekBar.isEnabled = true
-            binding.rangeSeekBar.setOnRangeSeekBarChangeListener { bar, minValue, maxValue ->
-                //we seek through the video when the user drags and adjusts the seekbar
-                binding.videoView.seekTo(minValue as Int * 1000)
-                //changing the left and right TextView according to the minValue and maxValue
-                binding.textleft.text = getTime(bar.selectedMinValue.toInt())
-                binding.textright.text = getTime(bar.selectedMaxValue.toInt())
-            }
-
-            //this method changes the right TextView every 1 second as the video is being played
-            //It works same as a time counter we see in any Video Player
-
-            handler.postDelayed(object : Runnable {
-                override fun run() {
-
-                    val time: Int = abs(duration - binding.videoView.currentPosition) / 1000
-                    binding.textleft.text = getTime(time)
-
-                    //wrapping the video, i.e. once the video reaches its length,
-                    // again starts from the current position of left seekbar point
-                    if (binding.videoView.currentPosition >= binding.rangeSeekBar.selectedMaxValue.toInt() * 1000) {
-                        binding.videoView.seekTo(binding.rangeSeekBar.selectedMinValue.toInt() * 1000)
-                    }
-                    handler.postDelayed(this, 1000)
-                }
-            }, 0)
-
         }
     }
 
@@ -162,7 +109,7 @@ class InsertPictureActivity : AppCompatActivity() {
                                 imageFilePath!!
                             )
                         )
-                    } -filter_complex overlay=0:main_w-overlay_w $newFilePath"
+                    } -filter_complex \"[0:v][1:v] overlay=25:25:enable='between(t,0,20)'\" -pix_fmt yuv420p -c:a copy $newFilePath"
                 executeFfmpegCommand(command, newFilePath)
             }
         }
@@ -197,7 +144,6 @@ class InsertPictureActivity : AppCompatActivity() {
                             ).show()
                             return
                         }
-//                        insertGif()
                     }
                 } else {
                     Toast.makeText(this, "Permission denied", Toast.LENGTH_LONG).show()
@@ -206,25 +152,15 @@ class InsertPictureActivity : AppCompatActivity() {
         }
     }
 
-    private fun getTime(seconds: Int): String {
-        val hr = seconds / 3600
-        val rem = seconds % 3600
-        val mn = rem / 60
-        val sec = rem % 60
-        return String.format("%02d", hr) + ":" + String.format(
-            "%02d", mn
-        ) + ":" + String.format("%02d", sec)
-    }
-
     private val selectVideoLauncherUsingFfmpeg =
         registerForActivityResult(ActivityResultContracts.GetContent()) {
             it?.let {
                 input_video_uri_ffmpeg = FFmpegKitConfig.getSafParameterForRead(this, it)
-                binding.videoView.setVideoURI(it)
-
-                //after successful retrieval of the video and properly setting up the retried video uri in
-                //VideoView, Start the VideoView to play that video
-                binding.videoView.start()
+                Toast.makeText(
+                    this,
+                    "video loaded successfully: $input_video_uri_ffmpeg",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
 
@@ -281,14 +217,12 @@ class InsertPictureActivity : AppCompatActivity() {
                 if (returnCode.isValueSuccess) {
                     //after successful execution of ffmpeg command,
                     //again set up the video Uri in VideoView
-                    binding.videoView.setVideoPath(filePath)
                     //change the video_url to filePath, so that we could do more manipulations in the
                     //resultant video. By this we can apply as many effects as we want in a single video.
                     //Actually there are multiple videos being formed in storage but while using app it
                     //feels like we are doing manipulations in only one video
                     input_video_uri_ffmpeg = filePath
                     //play the result video in VideoView
-                    binding.videoView.start()
                     progressDialog.dismiss()
                     Toast.makeText(this@InsertPictureActivity, "Filter Applied", Toast.LENGTH_SHORT)
                         .show()
@@ -307,10 +241,6 @@ class InsertPictureActivity : AppCompatActivity() {
         }) { statistics ->
             Log.d("STATS", statistics.toString())
 
-            /*
-            using ffmpeg be careful while passing the image path.
-
-            */
         }
     }
 
