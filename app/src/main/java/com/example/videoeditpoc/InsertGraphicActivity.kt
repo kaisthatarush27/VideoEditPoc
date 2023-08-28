@@ -1,51 +1,78 @@
 package com.example.videoeditpoc
 
 import android.Manifest
-import android.app.Activity
 import android.app.ProgressDialog
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Color
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
+import android.text.Spannable
+import android.text.SpannableString
+import android.text.style.ForegroundColorSpan
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
+import androidx.media3.common.Effect
+import androidx.media3.common.MediaItem
+import androidx.media3.common.MimeTypes
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.effect.OverlayEffect
+import androidx.media3.effect.OverlaySettings
+import androidx.media3.effect.TextOverlay
+import androidx.media3.effect.TextureOverlay
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.transformer.Composition
+import androidx.media3.transformer.ExportException
+import androidx.media3.transformer.ExportResult
+import androidx.media3.transformer.TransformationRequest
+import androidx.media3.transformer.Transformer
 import com.arthenica.ffmpegkit.FFmpegKit
 import com.arthenica.ffmpegkit.FFmpegKitConfig
 import com.example.videoeditpoc.databinding.ActivityInsertGraphicBinding
+import com.google.common.collect.ImmutableList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
 import java.io.InputStream
-import kotlin.math.abs
 
 
 class InsertGraphicActivity : AppCompatActivity() {
     lateinit var binding: ActivityInsertGraphicBinding
     private var input_video_uri_ffmpeg: String? = null
+    private var input_video_uri_media: Uri? = null
     val handler = Handler(Looper.getMainLooper())
     private var gifUri: Uri? = null
     var filePath: String? = null
+    lateinit var exoPlayer: ExoPlayer
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityInsertGraphicBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        binding.selectVideoUsingFfmpeg.setOnClickListener {
+        binding.selectVideoBtn.setOnClickListener {
             handler.removeCallbacksAndMessages(null)
             selectVideoLauncherUsingFfmpeg.launch("video/*")
         }
 
+        binding.insertEmojiBtn.setOnClickListener {
+            insertEmoji()
+        }
+
+        exoPlayer = ExoPlayer.Builder(this).build()
+        binding.playerView.player = exoPlayer
         binding.saveVideo.setOnClickListener {
             if (input_video_uri_ffmpeg != null) {
                 //passing filename
@@ -55,16 +82,7 @@ class InsertGraphicActivity : AppCompatActivity() {
             ).show()
         }
 
-        binding.insertGraphic.setOnClickListener {
-
-            if (input_video_uri_ffmpeg != null) {
-                insertGif()
-            } else {
-                Toast.makeText(
-                    this@InsertGraphicActivity, "Please upload video", Toast.LENGTH_LONG
-                ).show()
-                return@setOnClickListener
-            }
+        binding.insertGraphicBtn.setOnClickListener {
             if (ContextCompat.checkSelfPermission(
                     this, Manifest.permission.READ_EXTERNAL_STORAGE
                 ) == PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(
@@ -80,71 +98,89 @@ class InsertGraphicActivity : AppCompatActivity() {
                     ), 1
                 )
             }
-//            if (input_video_uri_ffmpeg != null) {
-//                insertGif()
-//            } else Toast.makeText(
-//                this@InsertGraphicActivity, "Please upload video", Toast.LENGTH_LONG
-//            ).show()
         }
 
-        binding.insertPictureActivity.setOnClickListener {
+        binding.insertPictureActivityBtn.setOnClickListener {
             startActivity(Intent(this, InsertPictureActivity::class.java))
         }
 
-        binding.insertEmoji.setOnClickListener {
-            if (input_video_uri_ffmpeg != null) {
-                insertGifEmoji()
-            } else {
-                Toast.makeText(
-                    this@InsertGraphicActivity, "Please upload video", Toast.LENGTH_LONG
-                ).show()
-            }
-        }
+    }
 
-        binding.videoView.setOnPreparedListener { mp ->
-//            get the duration of the video
-            val duration = mp.duration / 1000
-            //initially set the left TextView to "00:00:00"
-            binding.textleft.text = "00:00:00"
-            //initially set the right Text-View to the video length
-            //the getTime() method returns a formatted string in hh:mm:ss
-            binding.textright.text = getTime(mp.duration / 1000)
-            //this will run he video in loop i.e. the video won't stop
-            //when it reaches its duration
-            mp.isLooping = true
+    @OptIn(UnstableApi::class)
+    val emojiLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            input_video_uri_media = result.data!!.data
+            Log.d("gamedia", "input_video_uri_media: $input_video_uri_media")
 
-            //set up the initial values of binding.rangeSeekBar
-            binding.rangeSeekBar.setRangeValues(0, duration)
-            binding.rangeSeekBar.selectedMinValue = 0
-            binding.rangeSeekBar.selectedMaxValue = duration
-            binding.rangeSeekBar.isEnabled = true
-            binding.rangeSeekBar.setOnRangeSeekBarChangeListener { bar, minValue, maxValue ->
-                //we seek through the video when the user drags and adjusts the seekbar
-                binding.videoView.seekTo(minValue as Int * 1000)
-                //changing the left and right TextView according to the minValue and maxValue
-                binding.textleft.text = getTime(bar.selectedMinValue.toInt())
-                binding.textright.text = getTime(bar.selectedMaxValue.toInt())
-            }
+            val mediaItem = MediaItem.fromUri(input_video_uri_media!!)
+            Log.d("gamedia", "mediaItem: $mediaItem")
 
-            //this method changes the right TextView every 1 second as the video is being played
-            //It works same as a time counter we see in any Video Player
+            Toast.makeText(this, "mediaItemLoadSuccess: $mediaItem", Toast.LENGTH_SHORT).show()
 
-            handler.postDelayed(object : Runnable {
-                override fun run() {
-
-                    val time: Int = abs(duration - binding.videoView.currentPosition) / 1000
-                    binding.textleft.text = getTime(time)
-
-                    //wrapping the video, i.e. once the video reaches its length,
-                    // again starts from the current position of left seekbar point
-                    if (binding.videoView.currentPosition >= binding.rangeSeekBar.selectedMaxValue.toInt() * 1000) {
-                        binding.videoView.seekTo(binding.rangeSeekBar.selectedMinValue.toInt() * 1000)
-                    }
-                    handler.postDelayed(this, 1000)
-                }
-            }, 0)
+            exoPlayer.setMediaItem(mediaItem)
+            exoPlayer.prepare()
+            exoPlayer.play()
+            exoPlayer.setVideoEffects(createVideoEffects())
+            createTransformation(mediaItem)
 
         }
+
+
+    @OptIn(UnstableApi::class)
+    private fun createOverlayEffect(): OverlayEffect? {
+        val overLaysBuilder: ImmutableList.Builder<TextureOverlay> = ImmutableList.builder()
+        val overlaySettings = OverlaySettings.Builder().build()
+
+        val overlayEmoji = SpannableString(resources.getString(R.string.emoji))
+        overlayEmoji.setSpan(
+            ForegroundColorSpan(Color.BLUE),
+            0,
+            overlayEmoji.length,
+            Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+        )
+        val emojiTextureOverlay: TextureOverlay =
+            TextOverlay.createStaticTextOverlay(overlayEmoji, overlaySettings)
+        overLaysBuilder.add(emojiTextureOverlay)
+
+        val overlays: ImmutableList<TextureOverlay> = overLaysBuilder.build()
+        return if (overlays.isEmpty()) null else OverlayEffect(overlays)
+    }
+
+
+    private fun createVideoEffects(): ImmutableList<Effect> {
+        val effects = ImmutableList.Builder<Effect>()
+        val overlayEffect: OverlayEffect = createOverlayEffect()!!
+        effects.add(overlayEffect)
+        return effects.build()
+    }
+
+    @OptIn(UnstableApi::class)
+    private fun createTransformation(mediaItem: MediaItem) {
+        val request = TransformationRequest.Builder().setVideoMimeType(MimeTypes.VIDEO_H264).build()
+        val transformerListener: Transformer.Listener = object : Transformer.Listener {
+            override fun onCompleted(composition: Composition, result: ExportResult) {
+                Log.d("vcas", "success")
+                Toast.makeText(this@InsertGraphicActivity, "success: $result", Toast.LENGTH_SHORT)
+                    .show()
+            }
+
+            override fun onError(
+                composition: Composition, result: ExportResult, exception: ExportException
+            ) {
+                Log.d("vcae", "fail")
+            }
+        }
+        val transformer = Transformer.Builder(this).setTransformationRequest(request)
+            .addListener(transformerListener).build()
+        val filePath: String =
+            createExternalCacheFile("transformer.mp4").absolutePath
+        transformer.start(mediaItem, filePath)
+    }
+
+    private fun insertEmoji() {
+        val intent = Intent(Intent.ACTION_PICK)
+        intent.type = "video/*"
+        emojiLauncher.launch(intent)
     }
 
     override fun onRequestPermissionsResult(
@@ -175,7 +211,6 @@ class InsertGraphicActivity : AppCompatActivity() {
                             ).show()
                             return
                         }
-//                        insertGif()
                     }
                 } else {
                     Toast.makeText(this, "Permission denied", Toast.LENGTH_LONG).show()
@@ -221,7 +256,6 @@ class InsertGraphicActivity : AppCompatActivity() {
                     //after successful execution of ffmpeg command,
                     //again set up the video Uri in VideoView
                     Log.d("ffmpeg", "execFilePath: $filePath")
-                    binding.videoView.setVideoPath(filePath)
                     //change the video_url to filePath, so that we could do more manipulations in the
                     //resultant video. By this we can apply as many effects as we want in a single video.
                     //Actually there are multiple videos being formed in storage but while using app it
@@ -229,7 +263,6 @@ class InsertGraphicActivity : AppCompatActivity() {
                     input_video_uri_ffmpeg = filePath
                     Log.d("ffmpeg", "execInputVideoUri: $input_video_uri_ffmpeg")
                     //play the result video in VideoView
-                    binding.videoView.start()
                     progressDialog.dismiss()
                     Toast.makeText(this@InsertGraphicActivity, "Filter Applied", Toast.LENGTH_SHORT)
                         .show()
@@ -250,7 +283,7 @@ class InsertGraphicActivity : AppCompatActivity() {
 
     private var gifLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode == Activity.RESULT_OK) {
+            if (result.resultCode == RESULT_OK) {
                 gifUri = result.data!!.data
                 Log.d("gifuri", "gifUri: $gifUri")
                 if (gifUri != null && "content" == gifUri!!.scheme) {
@@ -279,21 +312,6 @@ class InsertGraphicActivity : AppCompatActivity() {
             }
         }
 
-    private fun getEmojiByUnicode(unicode: Int): String {
-        return String(Character.toChars(unicode))
-    }
-
-    private fun insertGifEmoji() {
-        val emojiString = getEmojiByUnicode(0x1F601)
-        val fontFile = "/system/fonts/Roboto-Regular.ttf"
-        val string = ""
-        val newFilePath: String = createExternalCacheFile(
-            System.currentTimeMillis().toString() + ".mp4"
-        ).absolutePath
-        val command =
-            "-y -i $input_video_uri_ffmpeg -vf \"drawtext=text='I am happy $emojiString':fontfile='$fontFile':x=(main_w-text_w-10):y=(main_h-text_h-10):fontsize=100:fontcolor=black:box=1:boxcolor=white@0.5:boxborderw=5\" $newFilePath"
-        executeFfmpegCommand(command, newFilePath)
-    }
 
     private val saveVideoLauncher =
         registerForActivityResult(ActivityResultContracts.CreateDocument("video/mp4")) {
@@ -325,11 +343,9 @@ class InsertGraphicActivity : AppCompatActivity() {
         registerForActivityResult(ActivityResultContracts.GetContent()) {
             it?.let {
                 input_video_uri_ffmpeg = FFmpegKitConfig.getSafParameterForRead(this, it)
-                binding.videoView.setVideoURI(it)
-
-                //after successful retrieval of the video and properly setting up the retried video uri in
-                //VideoView, Start the VideoView to play that video
-                binding.videoView.start()
+                Toast.makeText(
+                    this, "video loaded successfully: $input_video_uri_ffmpeg", Toast.LENGTH_SHORT
+                ).show()
             }
         }
 
