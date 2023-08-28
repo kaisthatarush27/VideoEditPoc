@@ -5,156 +5,41 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/gradient_relative_layout"
+    android:gravity="center"
     tools:context=".MainActivity">
 
 
     <Button
-        android:id="@+id/selectVideoUsingFfmpeg"
+        android:id="@+id/selectVideoBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
-        android:layout_marginEnd="5dp"
-        android:background="@drawable/buttonradius"
-        android:padding="10dp"
-        android:text="Select Video Ffmpeg"
-        android:textColor="@color/white" />
+        android:text="Select Video" />
 
+    <Button
+        android:id="@+id/insertTextBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/selectVideoBtn"
+        android:layout_marginTop="30dp"
+        android:text="insert text" />
+
+    <Button
+        android:id="@+id/insertGraphicActivityBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="30dp"
+        android:layout_toEndOf="@id/insertTextBtn"
+        android:text="Insert graphic act" />
 
     <Button
         android:id="@+id/saveVideo"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentEnd="true"
-        android:background="@drawable/button_save"
-        android:padding="10dp"
-        android:text="Save"
-        android:textColor="@color/white" />
-
-
-    <VideoView
-        android:id="@+id/videoView"
-        android:layout_width="match_parent"
-        android:layout_height="300dp"
-        android:layout_above="@+id/relative"
-        android:layout_below="@+id/selectVideoUsingFfmpeg"
-        android:layout_centerInParent="true" />
-
-    <LinearLayout
-        android:id="@+id/relative"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:orientation="vertical">
-
-        <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <TextView
-                android:id="@+id/textleft"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentStart="true"
-                android:layout_marginBottom="10dp"
-                android:text="00:00"
-                android:textColor="@color/white" />
-
-            <TextView
-                android:id="@+id/textright"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:layout_marginBottom="10dp"
-                android:layout_weight="1"
-                android:text="00:00"
-                android:textAlignment="textEnd"
-                android:textColor="@color/white" />
-        </RelativeLayout>
-
-        <RelativeLayout
-
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <org.florescu.android.rangeseekbar.RangeSeekBar
-
-                android:id="@+id/rangeSeekBar"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@drawable/seekbar_corner"
-                app:activeColor="@color/white"
-                app:alwaysActive="true"
-                app:barHeight="2dp"
-                app:showLabels="false"
-                app:textAboveThumbsColor="#000000" />
-
-        </RelativeLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="10dp" />
-
-        <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <LinearLayout
-                android:id="@+id/lineartime"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
-
-                <TextView
-                    android:id="@+id/text"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="10dp"
-                    android:text=""
-                    android:textColor="@color/semitransredcolornew" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_margin="10dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <Button
-                            android:id="@+id/insertText"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_gravity="center"
-                            android:contentDescription="text"
-                            android:text="insert text" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_margin="10dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <Button
-                            android:id="@+id/insertGraphicActivity"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_gravity="center"
-                            android:contentDescription="Graphic"
-                            android:text="Insert Graphic" />
-                    </LinearLayout>
-
-
-                </LinearLayout>
-            </LinearLayout>
-
-        </RelativeLayout>
-    </LinearLayout>
+        android:layout_below="@id/insertGraphicActivityBtn"
+        android:layout_marginStart="30dp"
+        android:layout_marginTop="30dp"
+        android:layout_toEndOf="@id/insertTextBtn"
+        android:text="Save" />
 
 </RelativeLayout>
