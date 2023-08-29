@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/insertGraphicRl"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/gradient_relative_layout"
+    tools:context=".MainActivity">
+
+
+    <Button
+        android:id="@+id/insertEmojiBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/etEmoji"
+        android:layout_marginStart="30dp"
+        android:layout_marginTop="8dp"
+        android:text="insert emoji" />
+
+    <androidx.media3.ui.PlayerView
+        android:id="@+id/playerView"
+        android:layout_width="match_parent"
+        android:layout_height="300dp"
+        android:layout_marginTop="50dp" />
+
+    <com.vanniktech.emoji.EmojiEditText
+        android:id="@+id/etEmoji"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/playerView"
+        android:visibility="visible"
+        android:layout_marginTop="10dp"
+        android:layout_marginStart="30dp"
+        android:layout_marginEnd="200dp"
+        android:background="@drawable/edit_text_bg"
+        android:hint="@string/enter_emojis"
+        android:imeOptions="actionSend"
+        android:importantForAutofill="no"
+        android:inputType="textCapSentences|textMultiLine"
+        android:maxLines="3"
+        android:padding="10dp"
+        android:textColor="@android:color/white"
+        app:emojiSize="30sp" />
+
+    <Button
+        android:id="@+id/btnEmojis"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/playerView"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="100dp"
+        android:text="🙂" />
+
+</RelativeLayout>

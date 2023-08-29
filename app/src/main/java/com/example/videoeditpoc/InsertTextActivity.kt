@@ -1,6 +1,7 @@
 package com.example.videoeditpoc
 
 import android.app.ProgressDialog
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
@@ -99,7 +100,6 @@ class InsertTextActivity : AppCompatActivity() {
 //        }
     }
 
-
     private fun getTime(seconds: Int): String {
         val hr = seconds / 3600
         val rem = seconds % 3600
@@ -138,7 +138,10 @@ class InsertTextActivity : AppCompatActivity() {
         registerForActivityResult(ActivityResultContracts.GetContent()) {
             it?.let {
                 input_video_uri_ffmpeg = FFmpegKitConfig.getSafParameterForRead(this, it)
-
+                val prefs = getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
+                val editor = prefs.edit()
+                editor.putString("inputVideoUri", input_video_uri_ffmpeg)
+                editor.apply()
                 Toast.makeText(
                     this,
                     "video loaded successfully: $input_video_uri_ffmpeg",
@@ -148,14 +151,26 @@ class InsertTextActivity : AppCompatActivity() {
             }
         }
 
+    override fun onResume() {
+        super.onResume()
+        val prefs = getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
+        input_video_uri_ffmpeg = prefs.getString("inputVideoUri", null)
+        Log.d("resumeita", "videoUri: $input_video_uri_ffmpeg")
+    }
+
     private fun insertTextUsingFfmpeg() {
+        val getUserInput = binding.ediText.text.toString()
+        if (getUserInput.isEmpty()) {
+            Toast.makeText(this, "please enter the text", Toast.LENGTH_SHORT).show()
+            return
+        }
         val newFilePath: String = createExternalCacheFile(
             System.currentTimeMillis().toString() + ".mp4"
         ).absolutePath
         val fontFile = "/system/fonts/Roboto-Regular.ttf"
 
         val exe =
-            "-y -i $input_video_uri_ffmpeg -vf \"drawtext=text='© Krishna':fontfile='$fontFile':x=(main_w-text_w-10):y=(main_h-text_h-10):fontsize=100:fontcolor=black:box=1:boxcolor=white@0.5:boxborderw=5\" $newFilePath"
+            "-y -i $input_video_uri_ffmpeg -vf \"drawtext=text='$getUserInput':fontfile='$fontFile':x=(main_w-text_w-10):y=(main_h-text_h-10):fontsize=100:fontcolor=black:box=1:boxcolor=white@0.5:boxborderw=5\" $newFilePath"
         executeFfmpegCommand(exe, newFilePath)
     }
 

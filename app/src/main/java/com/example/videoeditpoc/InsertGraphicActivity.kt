@@ -1,7 +1,9 @@
 package com.example.videoeditpoc
 
 import android.Manifest
+import android.app.Activity
 import android.app.ProgressDialog
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
@@ -41,6 +43,7 @@ import com.arthenica.ffmpegkit.FFmpegKit
 import com.arthenica.ffmpegkit.FFmpegKitConfig
 import com.example.videoeditpoc.databinding.ActivityInsertGraphicBinding
 import com.google.common.collect.ImmutableList
+import com.vanniktech.emoji.EmojiPopup
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.File
@@ -52,7 +55,7 @@ import java.io.InputStream
 class InsertGraphicActivity : AppCompatActivity() {
     lateinit var binding: ActivityInsertGraphicBinding
     private var input_video_uri_ffmpeg: String? = null
-    private var input_video_uri_media: Uri? = null
+    private var input_video_uri_media: String? = null
     val handler = Handler(Looper.getMainLooper())
     private var gifUri: Uri? = null
     var filePath: String? = null
@@ -68,9 +71,20 @@ class InsertGraphicActivity : AppCompatActivity() {
         }
 
         binding.insertEmojiBtn.setOnClickListener {
-            insertEmoji()
+            if (input_video_uri_media != null) {
+                insertEmoji()
+            } else {
+                Toast.makeText(this, "Please upload the video", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
         }
 
+        val emojiPopup =
+            EmojiPopup.Builder.fromRootView(binding.insertGraphicRl).build(binding.etEmoji)
+
+        binding.btnEmojis.setOnClickListener {
+            emojiPopup.toggle()
+        }
         exoPlayer = ExoPlayer.Builder(this).build()
         binding.playerView.player = exoPlayer
         binding.saveVideo.setOnClickListener {
@@ -109,10 +123,16 @@ class InsertGraphicActivity : AppCompatActivity() {
     @OptIn(UnstableApi::class)
     val emojiLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            input_video_uri_media = result.data!!.data
+            if(result.resultCode != Activity.RESULT_OK && result.data == null){
+                return@registerForActivityResult
+            }
+            input_video_uri_media = result.data!!.data.toString()
             Log.d("gamedia", "input_video_uri_media: $input_video_uri_media")
-
-            val mediaItem = MediaItem.fromUri(input_video_uri_media!!)
+            val prefs = getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
+            val editor = prefs.edit()
+            editor.putString("inputVideoUriMedia", input_video_uri_media)
+            editor.apply()
+            val mediaItem = MediaItem.fromUri(input_video_uri_media!!.toUri())
             Log.d("gamedia", "mediaItem: $mediaItem")
 
             Toast.makeText(this, "mediaItemLoadSuccess: $mediaItem", Toast.LENGTH_SHORT).show()
@@ -131,7 +151,8 @@ class InsertGraphicActivity : AppCompatActivity() {
         val overLaysBuilder: ImmutableList.Builder<TextureOverlay> = ImmutableList.builder()
         val overlaySettings = OverlaySettings.Builder().build()
 
-        val overlayEmoji = SpannableString(resources.getString(R.string.emoji))
+        val getEmoji = binding.etEmoji.text
+        val overlayEmoji = SpannableString(getEmoji)
         overlayEmoji.setSpan(
             ForegroundColorSpan(Color.BLUE),
             0,
@@ -343,6 +364,10 @@ class InsertGraphicActivity : AppCompatActivity() {
         registerForActivityResult(ActivityResultContracts.GetContent()) {
             it?.let {
                 input_video_uri_ffmpeg = FFmpegKitConfig.getSafParameterForRead(this, it)
+                val prefs = getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
+                val editor = prefs.edit()
+                editor.putString("inputVideoUri", input_video_uri_ffmpeg)
+                editor.apply()
                 Toast.makeText(
                     this, "video loaded successfully: $input_video_uri_ffmpeg", Toast.LENGTH_SHORT
                 ).show()
@@ -355,5 +380,14 @@ class InsertGraphicActivity : AppCompatActivity() {
         check(!(file.exists() && !file.delete())) { "Could not delete the previous export output file" }
         check(file.createNewFile()) { "Could not create the export output file" }
         return file
+    }
+
+    override fun onResume() {
+        super.onResume()
+        val prefs = getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
+        input_video_uri_ffmpeg = prefs.getString("inputVideoUri", null)
+        input_video_uri_media = prefs.getString("inputVideoUriMedia", null)
+        Log.d("resumeita", "videoUri: $input_video_uri_ffmpeg")
+        Log.d("resumeitamedia", "videoMediaUri: $input_video_uri_media")
     }
 }

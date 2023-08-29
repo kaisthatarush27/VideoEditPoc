@@ -7,4 +7,6 @@
     <string name="select_video_effects">select video effects\n</string>
     <string name="export">Export</string>
     <string name="emoji">I am happy &#128522;</string>
+    <string name="enter_the_text_to_show_on_the_video">Enter the text to show on the video</string>
+    <string name="enter_emojis">Enter emojis</string>
 </resources>

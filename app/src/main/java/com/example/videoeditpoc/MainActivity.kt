@@ -1,16 +1,17 @@
 package com.example.videoeditpoc
 
 import android.app.ProgressDialog
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import android.widget.MediaController
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
-import androidx.media3.exoplayer.ExoPlayer
 import com.arthenica.ffmpegkit.FFmpegKit
 import com.arthenica.ffmpegkit.FFmpegKitConfig
 import com.example.videoeditpoc.databinding.ActivityMainBinding
@@ -18,15 +19,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileInputStream
+import java.io.IOException
 import java.io.InputStream
-import kotlin.math.abs
 
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
-    private var selectedVideoUri = ""
     private var input_video_uri_ffmpeg: String? = null
-    lateinit var player: ExoPlayer
+    var mediaControls: MediaController? = null
     val handler = Handler(Looper.getMainLooper())
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,12 +35,12 @@ class MainActivity : AppCompatActivity() {
 
 
 //        initView()
-        binding.selectVideoUsingFfmpeg.setOnClickListener {
+        binding.selectVideoBtn.setOnClickListener {
             handler.removeCallbacksAndMessages(null)
             selectVideoLauncherUsingFfmpeg.launch("video/*")
         }
 
-        binding.reverse.setOnClickListener {
+        binding.reverseVideoBtn.setOnClickListener {
             if (input_video_uri_ffmpeg != null) {
                 reverse()
             } else Toast.makeText(this@MainActivity, "Please upload video", Toast.LENGTH_LONG)
@@ -55,52 +55,52 @@ class MainActivity : AppCompatActivity() {
                 .show()
         }
 
-        binding.insertTextActivity.setOnClickListener {
+        binding.insertTextActivityBtn.setOnClickListener {
             startActivity(Intent(this, InsertTextActivity::class.java))
         }
 
         binding.videoView.setOnPreparedListener { mp ->
 //            get the duration of the video
-            val duration = mp.duration / 1000
-            //initially set the left TextView to "00:00:00"
-            binding.textleft.text = "00:00:00"
-            //initially set the right Text-View to the video length
-            //the getTime() method returns a formatted string in hh:mm:ss
-            binding.textright.text = getTime(mp.duration / 1000)
-            //this will run he video in loop i.e. the video won't stop
-            //when it reaches its duration
-            mp.isLooping = true
-
-            //set up the initial values of binding.rangeSeekBar
-            binding.rangeSeekBar.setRangeValues(0, duration)
-            binding.rangeSeekBar.selectedMinValue = 0
-            binding.rangeSeekBar.selectedMaxValue = duration
-            binding.rangeSeekBar.isEnabled = true
-            binding.rangeSeekBar.setOnRangeSeekBarChangeListener { bar, minValue, maxValue ->
-                //we seek through the video when the user drags and adjusts the seekbar
-                binding.videoView.seekTo(minValue as Int * 1000)
-                //changing the left and right TextView according to the minValue and maxValue
-                binding.textleft.text = getTime(bar.selectedMinValue.toInt())
-                binding.textright.text = getTime(bar.selectedMaxValue.toInt())
-            }
-
-            //this method changes the right TextView every 1 second as the video is being played
-            //It works same as a time counter we see in any Video Player
-
-            handler.postDelayed(object : Runnable {
-                override fun run() {
-
-                    val time: Int = abs(duration - binding.videoView.currentPosition) / 1000
-                    binding.textleft.text = getTime(time)
-
-                    //wrapping the video, i.e. once the video reaches its length,
-                    // again starts from the current position of left seekbar point
-                    if (binding.videoView.currentPosition >= binding.rangeSeekBar.selectedMaxValue.toInt() * 1000) {
-                        binding.videoView.seekTo(binding.rangeSeekBar.selectedMinValue.toInt() * 1000)
-                    }
-                    handler.postDelayed(this, 1000)
-                }
-            }, 0)
+//            val duration = mp.duration / 1000
+//            //initially set the left TextView to "00:00:00"
+//            binding.textleft.text = "00:00:00"
+//            //initially set the right Text-View to the video length
+//            //the getTime() method returns a formatted string in hh:mm:ss
+//            binding.textright.text = getTime(mp.duration / 1000)
+//            //this will run he video in loop i.e. the video won't stop
+//            //when it reaches its duration
+//            mp.isLooping = true
+//
+//            //set up the initial values of binding.rangeSeekBar
+//            binding.rangeSeekBar.setRangeValues(0, duration)
+//            binding.rangeSeekBar.selectedMinValue = 0
+//            binding.rangeSeekBar.selectedMaxValue = duration
+//            binding.rangeSeekBar.isEnabled = true
+//            binding.rangeSeekBar.setOnRangeSeekBarChangeListener { bar, minValue, maxValue ->
+//                //we seek through the video when the user drags and adjusts the seekbar
+//                binding.videoView.seekTo(minValue as Int * 1000)
+//                //changing the left and right TextView according to the minValue and maxValue
+//                binding.textleft.text = getTime(bar.selectedMinValue.toInt())
+//                binding.textright.text = getTime(bar.selectedMaxValue.toInt())
+//            }
+//
+//            //this method changes the right TextView every 1 second as the video is being played
+//            //It works same as a time counter we see in any Video Player
+//
+//            handler.postDelayed(object : Runnable {
+//                override fun run() {
+//
+//                    val time: Int = abs(duration - binding.videoView.currentPosition) / 1000
+//                    binding.textleft.text = getTime(time)
+//
+//                    //wrapping the video, i.e. once the video reaches its length,
+//                    // again starts from the current position of left seekbar point
+//                    if (binding.videoView.currentPosition >= binding.rangeSeekBar.selectedMaxValue.toInt() * 1000) {
+//                        binding.videoView.seekTo(binding.rangeSeekBar.selectedMinValue.toInt() * 1000)
+//                    }
+//                    handler.postDelayed(this, 1000)
+//                }
+//            }, 0)
 
         }
 
@@ -142,10 +142,13 @@ class MainActivity : AppCompatActivity() {
         }
 
     private fun reverse() {
-        val folder = cacheDir
-        val file = File(folder, System.currentTimeMillis().toString() + ".mp4")
-        val exe = "-i $input_video_uri_ffmpeg -vf reverse -af areverse ${file.absolutePath}"
-        executeFfmpegCommand(exe, file.absolutePath)
+        val newFilePath: String = createExternalCacheFile(
+            System.currentTimeMillis().toString() + ".mp4"
+        ).absolutePath
+
+
+        val exe = "-y -i $input_video_uri_ffmpeg -vf reverse $newFilePath"
+        executeFfmpegCommand(exe, newFilePath)
     }
 
     private fun executeFfmpegCommand(exe: String, filePath: String) {
@@ -168,6 +171,16 @@ class MainActivity : AppCompatActivity() {
                 if (returnCode.isValueSuccess) {
                     //after successful execution of ffmpeg command,
                     //again set up the video Uri in VideoView
+                    if (mediaControls == null) {
+                        // creating an object of media controller class
+                        mediaControls = MediaController(this@MainActivity)
+
+                        // set the anchor view for the video view
+                        mediaControls!!.setAnchorView(binding.videoView)
+                    }
+
+                    // set the media controller for video view
+                    binding.videoView.setMediaController(mediaControls)
                     binding.videoView.setVideoPath(filePath)
                     //change the video_url to filePath, so that we could do more manipulations in the
                     //resultant video. By this we can apply as many effects as we want in a single video.
@@ -196,6 +209,20 @@ class MainActivity : AppCompatActivity() {
         registerForActivityResult(ActivityResultContracts.GetContent()) {
             it?.let {
                 input_video_uri_ffmpeg = FFmpegKitConfig.getSafParameterForRead(this, it)
+                val prefs = getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
+                val editor = prefs.edit()
+                editor.putString("inputVideoUri", input_video_uri_ffmpeg)
+                editor.apply()
+                if (mediaControls == null) {
+                    // creating an object of media controller class
+                    mediaControls = MediaController(this)
+
+                    // set the anchor view for the video view
+                    mediaControls!!.setAnchorView(binding.videoView)
+                }
+
+                // set the media controller for video view
+                binding.videoView.setMediaController(mediaControls)
                 binding.videoView.setVideoURI(it)
 
                 //after successful retrieval of the video and properly setting up the retried video uri in
@@ -203,6 +230,13 @@ class MainActivity : AppCompatActivity() {
                 binding.videoView.start()
             }
         }
+
+    override fun onResume() {
+        super.onResume()
+        val prefs = getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
+        input_video_uri_ffmpeg = prefs.getString("inputVideoUri", null)
+        Log.d("resumeita", "videoUri: $input_video_uri_ffmpeg")
+    }
 
 //    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
 //        super.onActivityResult(requestCode, resultCode, data)
@@ -347,4 +381,11 @@ class MainActivity : AppCompatActivity() {
 //        return file
 //    }
 
+    @Throws(IOException::class)
+    private fun createExternalCacheFile(fileName: String): File {
+        val file = File(externalCacheDir, fileName)
+        check(!(file.exists() && !file.delete())) { "Could not delete the previous export output file" }
+        check(file.createNewFile()) { "Could not create the export output file" }
+        return file
+    }
 }

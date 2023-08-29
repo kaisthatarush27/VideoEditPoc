@@ -42,4 +42,31 @@
         android:layout_toEndOf="@id/insertTextBtn"
         android:text="Save" />
 
+    <EditText
+        android:id="@+id/ediText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/insertTextBtn"
+        android:layout_marginTop="30dp"
+        android:background="@drawable/edit_text_bg"
+        android:hint="@string/enter_the_text_to_show_on_the_video"
+        android:imeOptions="actionDone"
+        android:inputType="text"
+        android:padding="10dp" />
+
+    <FrameLayout
+        android:id="@+id/anchorView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/ediText"
+        android:layout_marginTop="20dp"
+        android:visibility="gone">
+
+        <VideoView
+            android:id="@+id/videoView"
+            android:layout_width="match_parent"
+            android:layout_height="300dp" />
+
+    </FrameLayout>
+
 </RelativeLayout>

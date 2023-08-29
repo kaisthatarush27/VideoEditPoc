@@ -3,6 +3,7 @@ package com.example.videoeditpoc
 import android.Manifest
 import android.app.Activity
 import android.app.ProgressDialog
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -43,6 +44,10 @@ class InsertPictureActivity : AppCompatActivity() {
         binding.selectVideoBtn.setOnClickListener {
             handler.removeCallbacksAndMessages(null)
             selectVideoLauncherUsingFfmpeg.launch("video/*")
+        }
+
+        binding.insertEmojiActBtn.setOnClickListener {
+            startActivity(Intent(this, InsertEmojiActivity::class.java))
         }
 
         binding.insertPictureBtn.setOnClickListener {
@@ -156,6 +161,10 @@ class InsertPictureActivity : AppCompatActivity() {
         registerForActivityResult(ActivityResultContracts.GetContent()) {
             it?.let {
                 input_video_uri_ffmpeg = FFmpegKitConfig.getSafParameterForRead(this, it)
+                val prefs = getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
+                val editor = prefs.edit()
+                editor.putString("inputVideoUri", input_video_uri_ffmpeg)
+                editor.apply()
                 Toast.makeText(
                     this,
                     "video loaded successfully: $input_video_uri_ffmpeg",
@@ -164,6 +173,12 @@ class InsertPictureActivity : AppCompatActivity() {
             }
         }
 
+    override fun onResume() {
+        super.onResume()
+        val prefs = getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
+        input_video_uri_ffmpeg = prefs.getString("inputVideoUri", null)
+        Log.d("resumeita", "videoUri: $input_video_uri_ffmpeg")
+    }
 
     private val saveVideoLauncher =
         registerForActivityResult(ActivityResultContracts.CreateDocument("video/mp4")) {

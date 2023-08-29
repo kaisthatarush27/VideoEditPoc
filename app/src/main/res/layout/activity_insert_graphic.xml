@@ -3,6 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
+    android:id="@+id/insertGraphicRl"
     android:layout_height="match_parent"
     android:background="@drawable/gradient_relative_layout"
     android:gravity="center"
@@ -60,5 +61,29 @@
         android:layout_height="300dp"
         android:layout_below="@id/insertEmojiBtn"
         android:layout_marginTop="50dp" />
+
+    <com.vanniktech.emoji.EmojiEditText
+        android:id="@+id/etEmoji"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:imeOptions="actionDone"
+        android:layout_below="@id/playerView"
+        android:layout_marginStart="10dp"
+        android:layout_marginTop="10dp"
+        android:background="@drawable/edit_text_bg"
+        android:hint="@string/enter_emojis"
+        android:padding="10dp"
+        android:textColor="@android:color/white"
+        app:emojiSize="30sp" />
+
+    <Button
+        android:id="@+id/btnEmojis"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/playerView"
+        android:layout_marginStart="10dp"
+        android:layout_marginTop="8dp"
+        android:layout_toEndOf="@id/etEmoji"
+        android:text="🙂" />
 
 </RelativeLayout>

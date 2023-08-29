@@ -43,5 +43,13 @@
         android:layout_toEndOf="@id/reverseVideoBtnBtn"
         android:text="Save Video" />
 
+    <Button
+        android:id="@+id/insertEmojiActBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/saveVideo"
+        android:layout_marginTop="30dp"
+        android:text="Insert Emoji Act" />
+
 
 </RelativeLayout>
