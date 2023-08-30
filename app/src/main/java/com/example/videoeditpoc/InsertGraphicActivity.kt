@@ -123,7 +123,7 @@ class InsertGraphicActivity : AppCompatActivity() {
     @OptIn(UnstableApi::class)
     val emojiLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            if(result.resultCode != Activity.RESULT_OK && result.data == null){
+            if (result.resultCode != Activity.RESULT_OK && result.data == null) {
                 return@registerForActivityResult
             }
             input_video_uri_media = result.data!!.data.toString()

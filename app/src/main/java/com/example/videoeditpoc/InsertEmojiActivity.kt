@@ -37,15 +37,14 @@ class InsertEmojiActivity : AppCompatActivity() {
     private lateinit var binding: ActivityInsertEmojiBinding
     private var input_video_uri_media: String? = null
     lateinit var exoPlayer: ExoPlayer
-    var videoFilePath: Uri? = null
+    private var outputFilePath: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityInsertEmojiBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        exoPlayer = ExoPlayer.Builder(this).build()
-        binding.playerView.player = exoPlayer
+        initExoPlayer()
 
         binding.insertEmojiBtn.setOnClickListener {
             if (binding.etEmoji.text!!.isEmpty()) {
@@ -61,6 +60,11 @@ class InsertEmojiActivity : AppCompatActivity() {
         binding.btnEmojis.setOnClickListener {
             emojiPopup.toggle()
         }
+    }
+
+    private fun initExoPlayer() {
+        exoPlayer = ExoPlayer.Builder(this).build()
+        binding.playerView.player = exoPlayer
     }
 
     @OptIn(androidx.media3.common.util.UnstableApi::class)
@@ -116,36 +120,9 @@ class InsertEmojiActivity : AppCompatActivity() {
 
         val getEmoji = binding.etEmoji.text.toString()
         val overlayEmoji = SpannableString(getEmoji)
-//        overlayEmoji.setSpan(
-//            ForegroundColorSpan(Color.BLUE),
-//            0,
-//            overlayEmoji.length,
-//            Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-//        )
         val emojiTextureOverlay: TextureOverlay =
             TextOverlay.createStaticTextOverlay(overlayEmoji)
         overLaysBuilder.add(emojiTextureOverlay)
-
-//        binding.etEmoji.addTextChangedListener(object : TextWatcher{
-//            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
-//
-//            }
-//
-//            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-//
-//            }
-//
-//            override fun afterTextChanged(s: Editable?) {
-//                Log.d("imta", "afterTextChanged: $s")
-//                val updatedEmoji = SpannableString(s.toString())
-//                val updatedEmojiTextureOverlay: TextureOverlay =
-//                    TextOverlay.createStaticTextOverlay(updatedEmoji)
-//                val updatedOverLaysBuilder: ImmutableList.Builder<TextureOverlay> = ImmutableList.builder()
-//                updatedOverLaysBuilder.add(updatedEmojiTextureOverlay)
-//
-//            }
-//
-//        })
 
         val overlays: ImmutableList<TextureOverlay> = overLaysBuilder.build()
         return if (overlays.isEmpty()) null else OverlayEffect(overlays)
@@ -157,8 +134,6 @@ class InsertEmojiActivity : AppCompatActivity() {
         val transformerListener: Transformer.Listener = object : Transformer.Listener {
             override fun onCompleted(composition: Composition, result: ExportResult) {
                 Log.d("vcas", "success")
-                Toast.makeText(this@InsertEmojiActivity, "success: $result", Toast.LENGTH_SHORT)
-                    .show()
             }
 
             override fun onError(
@@ -174,8 +149,9 @@ class InsertEmojiActivity : AppCompatActivity() {
             ).build()
         val transformer = Transformer.Builder(this).setTransformationRequest(request)
             .addListener(transformerListener).build()
-        val filePath: String = createExternalCacheFile("transformer.mp4").absolutePath
-        transformer.start(inputEditedMediaItem, filePath)
+        outputFilePath =
+            createExternalCacheFile(System.currentTimeMillis().toString() + ".mp4").absolutePath
+        transformer.start(inputEditedMediaItem, outputFilePath!!)
     }
 
     @Throws(IOException::class)

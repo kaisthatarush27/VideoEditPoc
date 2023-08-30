@@ -3,17 +3,38 @@ package com.example.videoeditpoc
 import android.app.ProgressDialog
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.text.Spannable
+import android.text.SpannableString
+import android.text.style.ForegroundColorSpan
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import androidx.media3.common.Effect
+import androidx.media3.common.MediaItem
+import androidx.media3.common.MimeTypes
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.effect.OverlayEffect
+import androidx.media3.effect.OverlaySettings
+import androidx.media3.effect.TextOverlay
+import androidx.media3.effect.TextureOverlay
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.transformer.Composition
+import androidx.media3.transformer.EditedMediaItem
+import androidx.media3.transformer.Effects
+import androidx.media3.transformer.ExportException
+import androidx.media3.transformer.ExportResult
+import androidx.media3.transformer.TransformationRequest
+import androidx.media3.transformer.Transformer
 import com.arthenica.ffmpegkit.FFmpegKit
 import com.arthenica.ffmpegkit.FFmpegKitConfig
 import com.example.videoeditpoc.databinding.ActivityInsertTextBinding
+import com.google.common.collect.ImmutableList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.File
@@ -21,24 +42,31 @@ import java.io.FileInputStream
 import java.io.IOException
 import java.io.InputStream
 
+@UnstableApi
 class InsertTextActivity : AppCompatActivity() {
     lateinit var binding: ActivityInsertTextBinding
     private var input_video_uri_ffmpeg: String? = null
+    private var outputFilePath: String? = null
+    private var player: ExoPlayer? = null
     val handler = Handler(Looper.getMainLooper())
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityInsertTextBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        binding.insertTextBtn.setOnClickListener {
-            if (input_video_uri_ffmpeg != null) {
-                insertTextUsingFfmpeg()
-            } else Toast.makeText(this, "Please upload video", Toast.LENGTH_LONG)
-                .show()
-        }
+//        binding.insertTextBtn.setOnClickListener {
+//            if (input_video_uri_ffmpeg != null) {
+//                insertTextUsingFfmpeg()
+//            } else Toast.makeText(this, "Please upload video", Toast.LENGTH_LONG)
+//                .show()
+//        }
 
         binding.selectVideoBtn.setOnClickListener {
             handler.removeCallbacksAndMessages(null)
+            if (binding.ediText.text.toString().isEmpty()) {
+                Toast.makeText(this, "enter text", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
             selectVideoLauncherUsingFfmpeg.launch("video/*")
         }
 
@@ -53,6 +81,8 @@ class InsertTextActivity : AppCompatActivity() {
         binding.insertGraphicActivityBtn.setOnClickListener {
             startActivity(Intent(this, InsertGraphicActivity::class.java))
         }
+
+        initExoPLayer()
 
 //        binding.videoView.setOnPreparedListener { mp ->
 //            get the duration of the video
@@ -100,6 +130,11 @@ class InsertTextActivity : AppCompatActivity() {
 //        }
     }
 
+    private fun initExoPLayer() {
+        player = ExoPlayer.Builder(this).build()
+        binding.exoPlayer.player = player
+    }
+
     private fun getTime(seconds: Int): String {
         val hr = seconds / 3600
         val rem = seconds % 3600
@@ -114,7 +149,7 @@ class InsertTextActivity : AppCompatActivity() {
         registerForActivityResult(ActivityResultContracts.CreateDocument("video/mp4")) {
             it?.let {
                 val out = contentResolver.openOutputStream(it)
-                val ip: InputStream = FileInputStream(input_video_uri_ffmpeg)
+                val ip: InputStream = FileInputStream(outputFilePath)
 
                 //com.google.common.io.ByteStreams, also provides a direct method to copy
                 // all bytes from the input stream to the output stream. Does not close or
@@ -134,45 +169,105 @@ class InsertTextActivity : AppCompatActivity() {
                 }
             }
         }
+
     private val selectVideoLauncherUsingFfmpeg =
         registerForActivityResult(ActivityResultContracts.GetContent()) {
             it?.let {
-                input_video_uri_ffmpeg = FFmpegKitConfig.getSafParameterForRead(this, it)
-                val prefs = getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
-                val editor = prefs.edit()
-                editor.putString("inputVideoUri", input_video_uri_ffmpeg)
-                editor.apply()
-                Toast.makeText(
-                    this,
-                    "video loaded successfully: $input_video_uri_ffmpeg",
-                    Toast.LENGTH_SHORT
-                ).show()
+                input_video_uri_ffmpeg = it.toString()
+//                val prefs = getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
+//                val editor = prefs.edit()
+//                editor.putString("inputVideoUri", input_video_uri_ffmpeg)
+//                editor.apply()
+//                Toast.makeText(
+//                    this,
+//                    "video loaded successfully: $input_video_uri_ffmpeg",
+//                    Toast.LENGTH_SHORT
+//                ).show()
 
+                val mediaItem = MediaItem.fromUri(input_video_uri_ffmpeg!!)
+                player!!.setMediaItem(mediaItem)
+                player!!.prepare()
+                player!!.play()
+                player!!.setVideoEffects(createVideoEffects())
+                createTransformation(mediaItem)
             }
         }
 
-    override fun onResume() {
-        super.onResume()
-        val prefs = getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
-        input_video_uri_ffmpeg = prefs.getString("inputVideoUri", null)
-        Log.d("resumeita", "videoUri: $input_video_uri_ffmpeg")
+    private fun createVideoEffects(): ImmutableList<Effect> {
+        val effects = ImmutableList.Builder<Effect>()
+        val overlayEffect: OverlayEffect = createOverlayEffect()!!
+        effects.add(overlayEffect)
+        return effects.build()
     }
 
-    private fun insertTextUsingFfmpeg() {
+    private fun createOverlayEffect(): OverlayEffect? {
+        val overLaysBuilder: ImmutableList.Builder<TextureOverlay> = ImmutableList.builder()
+        val overlaySettings = OverlaySettings.Builder().build()
+
         val getUserInput = binding.ediText.text.toString()
-        if (getUserInput.isEmpty()) {
-            Toast.makeText(this, "please enter the text", Toast.LENGTH_SHORT).show()
-            return
-        }
-        val newFilePath: String = createExternalCacheFile(
-            System.currentTimeMillis().toString() + ".mp4"
-        ).absolutePath
-        val fontFile = "/system/fonts/Roboto-Regular.ttf"
+        val spannableText = SpannableString(getUserInput)
+        spannableText.setSpan(
+            ForegroundColorSpan(Color.BLUE),
+            0,
+            spannableText.length,
+            Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+        )
+        val overlayText: TextureOverlay =
+            TextOverlay.createStaticTextOverlay(spannableText)
+        overLaysBuilder.add(overlayText)
 
-        val exe =
-            "-y -i $input_video_uri_ffmpeg -vf \"drawtext=text='$getUserInput':fontfile='$fontFile':x=(main_w-text_w-10):y=(main_h-text_h-10):fontsize=100:fontcolor=black:box=1:boxcolor=white@0.5:boxborderw=5\" $newFilePath"
-        executeFfmpegCommand(exe, newFilePath)
+
+        val overlays: ImmutableList<TextureOverlay> = overLaysBuilder.build()
+        return if (overlays.isEmpty()) null else OverlayEffect(overlays)
     }
+
+    private fun createTransformation(mediaItem: MediaItem) {
+        val request = TransformationRequest.Builder().setVideoMimeType(MimeTypes.VIDEO_H265).build()
+        val transformerListener: Transformer.Listener = object : Transformer.Listener {
+            override fun onCompleted(composition: Composition, result: ExportResult) {
+                Log.d("vcas", "success")
+            }
+
+            override fun onError(
+                composition: Composition, result: ExportResult, exception: ExportException
+            ) {
+                Log.d("vcae", "fail")
+            }
+        }
+
+        val inputEditedMediaItem = EditedMediaItem.Builder(mediaItem)
+            .setEffects(
+                Effects(listOf(), createVideoEffects())
+            ).build()
+        val transformer = Transformer.Builder(this).setTransformationRequest(request)
+            .addListener(transformerListener).build()
+        outputFilePath =
+            createExternalCacheFile(System.currentTimeMillis().toString() + ".mp4").absolutePath
+        transformer.start(inputEditedMediaItem, outputFilePath!!)
+    }
+
+//    override fun onResume() {
+//        super.onResume()
+//        val prefs = getSharedPreferences("MyPrefs", MODE_PRIVATE)
+//        input_video_uri_ffmpeg = prefs.getString("inputVideoUri", null)
+//        Log.d("resumeita", "videoUri: $input_video_uri_ffmpeg")
+//    }
+
+//    private fun insertTextUsingFfmpeg() {
+//        val getUserInput = binding.ediText.text.toString()
+//        if (getUserInput.isEmpty()) {
+//            Toast.makeText(this, "please enter the text", Toast.LENGTH_SHORT).show()
+//            return
+//        }
+//        val newFilePath: String = createExternalCacheFile(
+//            System.currentTimeMillis().toString() + ".mp4"
+//        ).absolutePath
+//        val fontFile = "/system/fonts/Roboto-Regular.ttf"
+//
+//        val exe =
+//            "-y -i $input_video_uri_ffmpeg -vf \"drawtext=text='$getUserInput':fontfile='$fontFile':x=(main_w-text_w-10):y=(main_h-text_h-10):fontsize=100:fontcolor=black:box=1:boxcolor=white@0.5:boxborderw=5\" $newFilePath"
+//        executeFfmpegCommand(exe, newFilePath)
+//    }
 
     private fun executeFfmpegCommand(exe: String, filePath: String) {
 
