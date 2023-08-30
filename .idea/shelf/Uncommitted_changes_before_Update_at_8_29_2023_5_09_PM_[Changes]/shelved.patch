@@ -1,0 +1,96 @@
+Index: .idea/vcs.xml
+===================================================================
+diff --git a/.idea/vcs.xml b/.idea/vcs.xml
+deleted file mode 100644
+--- a/.idea/vcs.xml	(revision 96f4c06c4bb7c60cfb7a81b12dbc2ec527131008)
++++ /dev/null	(revision 96f4c06c4bb7c60cfb7a81b12dbc2ec527131008)
+@@ -1,6 +0,0 @@
+-<?xml version="1.0" encoding="UTF-8"?>
+-<project version="4">
+-  <component name="VcsDirectoryMappings">
+-    <mapping directory="$PROJECT_DIR$" vcs="Git" />
+-  </component>
+-</project>
+\ No newline at end of file
+Index: .idea/misc.xml
+===================================================================
+diff --git a/.idea/misc.xml b/.idea/misc.xml
+deleted file mode 100644
+--- a/.idea/misc.xml	(revision 96f4c06c4bb7c60cfb7a81b12dbc2ec527131008)
++++ /dev/null	(revision 96f4c06c4bb7c60cfb7a81b12dbc2ec527131008)
+@@ -1,9 +0,0 @@
+-<project version="4">
+-  <component name="ExternalStorageConfigurationManager" enabled="true" />
+-  <component name="ProjectRootManager" version="2" languageLevel="JDK_17" project-jdk-name="jbr-17" project-jdk-type="JavaSDK">
+-    <output url="file://$PROJECT_DIR$/build/classes" />
+-  </component>
+-  <component name="ProjectType">
+-    <option name="id" value="Android" />
+-  </component>
+-</project>
+\ No newline at end of file
+Index: .idea/compiler.xml
+===================================================================
+diff --git a/.idea/compiler.xml b/.idea/compiler.xml
+deleted file mode 100644
+--- a/.idea/compiler.xml	(revision 96f4c06c4bb7c60cfb7a81b12dbc2ec527131008)
++++ /dev/null	(revision 96f4c06c4bb7c60cfb7a81b12dbc2ec527131008)
+@@ -1,6 +0,0 @@
+-<?xml version="1.0" encoding="UTF-8"?>
+-<project version="4">
+-  <component name="CompilerConfiguration">
+-    <bytecodeTargetLevel target="17" />
+-  </component>
+-</project>
+\ No newline at end of file
+Index: .idea/kotlinc.xml
+===================================================================
+diff --git a/.idea/kotlinc.xml b/.idea/kotlinc.xml
+deleted file mode 100644
+--- a/.idea/kotlinc.xml	(revision 96f4c06c4bb7c60cfb7a81b12dbc2ec527131008)
++++ /dev/null	(revision 96f4c06c4bb7c60cfb7a81b12dbc2ec527131008)
+@@ -1,6 +0,0 @@
+-<?xml version="1.0" encoding="UTF-8"?>
+-<project version="4">
+-  <component name="KotlinJpsPluginSettings">
+-    <option name="version" value="1.8.20" />
+-  </component>
+-</project>
+\ No newline at end of file
+Index: .idea/.gitignore
+===================================================================
+diff --git a/.idea/.gitignore b/.idea/.gitignore
+deleted file mode 100644
+--- a/.idea/.gitignore	(revision 96f4c06c4bb7c60cfb7a81b12dbc2ec527131008)
++++ /dev/null	(revision 96f4c06c4bb7c60cfb7a81b12dbc2ec527131008)
+@@ -1,3 +0,0 @@
+-# Default ignored files
+-/shelf/
+-/workspace.xml
+Index: .idea/gradle.xml
+===================================================================
+diff --git a/.idea/gradle.xml b/.idea/gradle.xml
+deleted file mode 100644
+--- a/.idea/gradle.xml	(revision 96f4c06c4bb7c60cfb7a81b12dbc2ec527131008)
++++ /dev/null	(revision 96f4c06c4bb7c60cfb7a81b12dbc2ec527131008)
+@@ -1,19 +0,0 @@
+-<?xml version="1.0" encoding="UTF-8"?>
+-<project version="4">
+-  <component name="GradleMigrationSettings" migrationVersion="1" />
+-  <component name="GradleSettings">
+-    <option name="linkedExternalProjectsSettings">
+-      <GradleProjectSettings>
+-        <option name="testRunner" value="GRADLE" />
+-        <option name="distributionType" value="DEFAULT_WRAPPED" />
+-        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+-        <option name="modules">
+-          <set>
+-            <option value="$PROJECT_DIR$" />
+-            <option value="$PROJECT_DIR$/app" />
+-          </set>
+-        </option>
+-      </GradleProjectSettings>
+-    </option>
+-  </component>
+-</project>
+\ No newline at end of file

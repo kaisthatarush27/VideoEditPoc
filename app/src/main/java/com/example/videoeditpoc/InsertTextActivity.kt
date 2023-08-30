@@ -3,17 +3,39 @@ package com.example.videoeditpoc
 import android.app.ProgressDialog
 import android.content.Context
 import android.content.Intent
+import android.graphics.BitmapFactory
+import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.text.Spannable
+import android.text.SpannableString
+import android.text.style.ForegroundColorSpan
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import androidx.media3.common.Effect
+import androidx.media3.common.MediaItem
+import androidx.media3.common.MimeTypes
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.effect.BitmapOverlay
+import androidx.media3.effect.OverlayEffect
+import androidx.media3.effect.OverlaySettings
+import androidx.media3.effect.TextOverlay
+import androidx.media3.effect.TextureOverlay
+import androidx.media3.transformer.Composition
+import androidx.media3.transformer.EditedMediaItem
+import androidx.media3.transformer.Effects
+import androidx.media3.transformer.ExportException
+import androidx.media3.transformer.ExportResult
+import androidx.media3.transformer.TransformationRequest
+import androidx.media3.transformer.Transformer
 import com.arthenica.ffmpegkit.FFmpegKit
 import com.arthenica.ffmpegkit.FFmpegKitConfig
 import com.example.videoeditpoc.databinding.ActivityInsertTextBinding
+import com.google.common.collect.ImmutableList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.File
@@ -21,10 +43,14 @@ import java.io.FileInputStream
 import java.io.IOException
 import java.io.InputStream
 
+@UnstableApi
 class InsertTextActivity : AppCompatActivity() {
     lateinit var binding: ActivityInsertTextBinding
     private var input_video_uri_ffmpeg: String? = null
+    private var outputPath: String? = null
     val handler = Handler(Looper.getMainLooper())
+
+    @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityInsertTextBinding.inflate(layoutInflater)
@@ -32,7 +58,8 @@ class InsertTextActivity : AppCompatActivity() {
 
         binding.insertTextBtn.setOnClickListener {
             if (input_video_uri_ffmpeg != null) {
-                insertTextUsingFfmpeg()
+                //insertTextUsingFfmpeg()
+                insertTextUsingMedia3()
             } else Toast.makeText(this, "Please upload video", Toast.LENGTH_LONG)
                 .show()
         }
@@ -114,7 +141,7 @@ class InsertTextActivity : AppCompatActivity() {
         registerForActivityResult(ActivityResultContracts.CreateDocument("video/mp4")) {
             it?.let {
                 val out = contentResolver.openOutputStream(it)
-                val ip: InputStream = FileInputStream(input_video_uri_ffmpeg)
+                val ip: InputStream = FileInputStream(outputPath)
 
                 //com.google.common.io.ByteStreams, also provides a direct method to copy
                 // all bytes from the input stream to the output stream. Does not close or
@@ -137,7 +164,8 @@ class InsertTextActivity : AppCompatActivity() {
     private val selectVideoLauncherUsingFfmpeg =
         registerForActivityResult(ActivityResultContracts.GetContent()) {
             it?.let {
-                input_video_uri_ffmpeg = FFmpegKitConfig.getSafParameterForRead(this, it)
+                //input_video_uri_ffmpeg = FFmpegKitConfig.getSafParameterForRead(this, it)
+                input_video_uri_ffmpeg = it.toString()
                 val prefs = getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
                 val editor = prefs.edit()
                 editor.putString("inputVideoUri", input_video_uri_ffmpeg)
@@ -157,6 +185,49 @@ class InsertTextActivity : AppCompatActivity() {
         input_video_uri_ffmpeg = prefs.getString("inputVideoUri", null)
         Log.d("resumeita", "videoUri: $input_video_uri_ffmpeg")
     }
+
+    private fun insertTextUsingMedia3() {
+
+        val overlayEffect = createOverlayEffect()
+
+        val videoEffects = mutableListOf<Effect>()
+        videoEffects.add(overlayEffect!!)
+
+        val inputMediaItem = MediaItem.fromUri(input_video_uri_ffmpeg!!)
+        val editedMediaItem =
+            EditedMediaItem.Builder(inputMediaItem).setEffects(Effects(emptyList(), videoEffects))
+                .build()
+        val transformer = Transformer.Builder(this)
+            .setTransformationRequest(
+                TransformationRequest.Builder().setVideoMimeType(MimeTypes.VIDEO_H264).build()
+            )
+            .addListener(transformerListener)
+            .build()
+
+        outputPath = createExternalCacheFile(
+            System.currentTimeMillis().toString() + ".mp4"
+        ).absolutePath
+        transformer.start(editedMediaItem, outputPath!!)
+    }
+
+    private val transformerListener: Transformer.Listener =
+        object : Transformer.Listener {
+            override fun onCompleted(composition: Composition, result: ExportResult) {
+                // playOutput()
+                Log.e("transform", "completed $result")
+                Toast.makeText(this@InsertTextActivity, "Edit completed", Toast.LENGTH_SHORT).show()
+            }
+
+            override fun onError(
+                composition: Composition, result: ExportResult,
+                exception: ExportException
+            ) {
+                //displayError(exception)
+                Toast.makeText(this@InsertTextActivity, "Edit failed", Toast.LENGTH_SHORT).show()
+                exception.printStackTrace()
+                Log.e("error", "exception ${exception.errorCode} ${exception.errorCodeName}")
+            }
+        }
 
     private fun insertTextUsingFfmpeg() {
         val getUserInput = binding.ediText.text.toString()
@@ -229,5 +300,26 @@ class InsertTextActivity : AppCompatActivity() {
         check(!(file.exists() && !file.delete())) { "Could not delete the previous export output file" }
         check(file.createNewFile()) { "Could not create the export output file" }
         return file
+    }
+
+    @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
+    private fun createOverlayEffect(): OverlayEffect? {
+        val overLaysBuilder: ImmutableList.Builder<TextureOverlay> = ImmutableList.builder()
+        val overlaySettings = OverlaySettings.Builder().build()
+
+        val overLayText = SpannableString("tarush")
+        overLayText.setSpan(
+            ForegroundColorSpan(Color.BLUE),
+            0,
+            overLayText.length,
+            Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+        )
+
+        val textureOverlay: TextureOverlay =
+            TextOverlay.createStaticTextOverlay(overLayText, overlaySettings)
+        overLaysBuilder.add(textureOverlay)
+
+        val overlays: ImmutableList<TextureOverlay> = overLaysBuilder.build()
+        return if (overlays.isEmpty()) null else OverlayEffect(overlays)
     }
 }
