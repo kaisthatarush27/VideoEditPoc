@@ -1,6 +1,7 @@
 package com.example.videoeditpoc
 
 import android.app.Activity
+import android.app.ProgressDialog
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -64,7 +65,6 @@ class InsertEmojiActivity : AppCompatActivity() {
 
     private fun initExoPlayer() {
         exoPlayer = ExoPlayer.Builder(this).build()
-        binding.playerView.player = exoPlayer
     }
 
     @OptIn(androidx.media3.common.util.UnstableApi::class)
@@ -82,12 +82,8 @@ class InsertEmojiActivity : AppCompatActivity() {
             }
             input_video_uri_media = result.data!!.data
             Log.d("gamedia", "input_video_uri_media: $input_video_uri_media")
-
-//            val prefs = getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
-//            val editor = prefs.edit()
-//            editor.putString("inputVideoUriMedia", input_video_uri_media!!.toString())
-//            editor.apply()
-
+            Toast.makeText(this, "mediaItemLoadSuccess:$input_video_uri_media", Toast.LENGTH_SHORT)
+                .show()
             if (input_video_uri_media != null && "content" == input_video_uri_media!!.scheme) {
                 val cursor = this.contentResolver.query(
                     input_video_uri_media!!,
@@ -106,14 +102,13 @@ class InsertEmojiActivity : AppCompatActivity() {
             }
             val mediaItem = MediaItem.Builder()
                 .setUri(input_video_uri_media)
-                .setMimeType(MimeTypes.VIDEO_H264)
                 .build()
 
             Log.d("gamedia", "mediaItem: $mediaItem")
-            exoPlayer.setMediaItem(mediaItem)
-            exoPlayer.prepare()
-            exoPlayer.play()
-            exoPlayer.setVideoEffects(createVideoEffects())
+//            exoPlayer.setMediaItem(mediaItem)
+//            exoPlayer.prepare()
+//            exoPlayer.play()
+//            exoPlayer.setVideoEffects(createVideoEffects())
             createTransformation(mediaItem)
 
             // binding.etEmoji.text!!.clear()
@@ -132,8 +127,6 @@ class InsertEmojiActivity : AppCompatActivity() {
     @OptIn(UnstableApi::class)
     private fun createOverlayEffect(): OverlayEffect? {
         val overLaysBuilder: ImmutableList.Builder<TextureOverlay> = ImmutableList.builder()
-        val overlaySettings = OverlaySettings.Builder().build()
-
         val getEmoji = binding.etEmoji.text.toString()
         val overlayEmoji = SpannableString(getEmoji)
         val emojiTextureOverlay: TextureOverlay =
@@ -146,16 +139,32 @@ class InsertEmojiActivity : AppCompatActivity() {
 
     @OptIn(UnstableApi::class)
     private fun createTransformation(mediaItem: MediaItem) {
+
+        val progressDialog = ProgressDialog(this@InsertEmojiActivity)
+        progressDialog.setCancelable(false)
+        progressDialog.setMessage("Applying Filter..")
+        progressDialog.setCanceledOnTouchOutside(false)
+        progressDialog.show()
         val request = TransformationRequest.Builder().setVideoMimeType(MimeTypes.VIDEO_H264).build()
         val transformerListener: Transformer.Listener = object : Transformer.Listener {
             override fun onCompleted(composition: Composition, result: ExportResult) {
                 Log.d("vcas", "success")
+//                progressDialog.setMessage("success")
+                progressDialog.dismiss()
+                Toast.makeText(this@InsertEmojiActivity, "Filter Applied", Toast.LENGTH_SHORT)
+                    .show()
+
             }
 
             override fun onError(
                 composition: Composition, result: ExportResult, exception: ExportException
             ) {
                 Log.d("vcae", "fail")
+//                progressDialog.setMessage("fail")
+                progressDialog.dismiss()
+                Toast.makeText(
+                    this@InsertEmojiActivity, "Something Went Wrong!", Toast.LENGTH_SHORT
+                ).show()
             }
         }
 

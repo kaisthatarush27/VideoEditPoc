@@ -9,27 +9,32 @@
     tools:context=".MainActivity">
 
 
+    <TextView
+        android:id="@+id/insertEmojiTv"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="Insert Emoji Screen"
+        android:textSize="30sp" />
+
     <Button
         android:id="@+id/insertEmojiBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_below="@id/insertEmojiTv"
         android:layout_alignParentStart="true"
+        android:layout_marginStart="10dp"
         android:layout_marginTop="8dp"
         android:text="insert emoji" />
 
-    <androidx.media3.ui.PlayerView
-        android:id="@+id/playerView"
-        android:layout_width="match_parent"
-        android:layout_height="300dp"
-        android:layout_below="@id/insertEmojiBtn"
-        android:layout_marginTop="50dp" />
 
     <com.vanniktech.emoji.EmojiEditText
         android:id="@+id/etEmoji"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/playerView"
-        android:layout_marginStart="30dp"
+        android:layout_below="@id/insertEmojiBtn"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="10dp"
         android:layout_marginTop="10dp"
         android:layout_marginEnd="200dp"
         android:background="@drawable/edit_text_bg"
@@ -47,7 +52,7 @@
         android:id="@+id/btnEmojis"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/playerView"
+        android:layout_below="@id/insertEmojiBtn"
         android:layout_alignParentEnd="true"
         android:layout_marginTop="8dp"
         android:layout_marginEnd="100dp"
