@@ -16,32 +16,25 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.net.toUri
 import androidx.media3.common.Effect
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
-import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.effect.OverlayEffect
 import androidx.media3.effect.TextOverlay
 import androidx.media3.effect.TextureOverlay
-import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.transformer.Composition
-import androidx.media3.transformer.DefaultEncoderFactory
 import androidx.media3.transformer.EditedMediaItem
 import androidx.media3.transformer.Effects
 import androidx.media3.transformer.ExportException
 import androidx.media3.transformer.ExportResult
 import androidx.media3.transformer.TransformationRequest
 import androidx.media3.transformer.Transformer
-import androidx.media3.transformer.VideoEncoderSettings
 import com.example.videoeditpoc.databinding.ActivityInsertTextBinding
 import com.google.common.collect.ImmutableList
 import java.io.File
-import java.io.FileInputStream
 import java.io.IOException
-import java.io.InputStream
 
 
 @UnstableApi
@@ -75,7 +68,7 @@ class InsertTextActivity : AppCompatActivity() {
             startActivity(Intent(this, InsertGraphicActivity::class.java))
         }
 
-        initExoPLayer()
+//        initExoPLayer()
     }
 
     private fun initExoPLayer() {
@@ -120,27 +113,6 @@ class InsertTextActivity : AppCompatActivity() {
 
         }
 
-    private fun playbackStateListener() = object : Player.Listener {
-        override fun onPlaybackStateChanged(playbackState: Int) {
-            // super.onPlaybackStateChanged(playbackState)
-
-            val stateString: String = when (playbackState) {
-                ExoPlayer.STATE_IDLE -> "ExoPlayer.STATE_IDLE"
-                ExoPlayer.STATE_BUFFERING -> "ExoPlayer.STATE_BUFFERING"
-                ExoPlayer.STATE_READY -> "ExoPlayer.STATE_READY"
-                ExoPlayer.STATE_ENDED -> "ExoPlayer.STATE_ENDED"
-                else -> "Unknown state"
-            }
-
-            Log.d("ita", "onPlaybackStateChanged: changed state to $stateString ")
-        }
-
-        override fun onIsPlayingChanged(isPlaying: Boolean) {
-            // super.onIsPlayingChanged(isPlaying)
-            val playingString = if (isPlaying) "PLAYING" else "NOT PLAYING"
-            Log.d("ita", "onIsPlayingChanged: Player is currently $playingString ")
-        }
-    }
 
     private fun createVideoEffects(): ImmutableList<Effect> {
         val effects = ImmutableList.Builder<Effect>()
@@ -219,37 +191,4 @@ class InsertTextActivity : AppCompatActivity() {
         return file
     }
 
-    override fun onStop() {
-        super.onStop()
-        player?.let { exoPlayer ->
-            playbackPosition = exoPlayer.currentPosition
-            mediaItemIndex = exoPlayer.currentMediaItemIndex
-            playWhenReady = exoPlayer.playWhenReady
-            exoPlayer.removeListener(playbackStateListener())
-            exoPlayer.release()
-        }
-        player = null
-    }
-
-    override fun onStart() {
-        super.onStart()
-        initExoPLayer()
-    }
-
-    override fun onResume() {
-        super.onResume()
-        if (player == null) initExoPLayer()
-    }
-
-    override fun onPause() {
-        super.onPause()
-        player?.let { exoPlayer ->
-            playbackPosition = exoPlayer.currentPosition
-            mediaItemIndex = exoPlayer.currentMediaItemIndex
-            playWhenReady = exoPlayer.playWhenReady
-            exoPlayer.removeListener(playbackStateListener())
-            exoPlayer.release()
-        }
-        player = null
-    }
 }

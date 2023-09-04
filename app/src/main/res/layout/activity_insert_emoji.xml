@@ -27,6 +27,15 @@
         android:layout_marginTop="8dp"
         android:text="insert emoji" />
 
+    <Button
+        android:id="@+id/insertTextActBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/insertEmojiTv"
+        android:layout_alignParentEnd="true"
+        android:layout_marginStart="10dp"
+        android:layout_marginTop="8dp"
+        android:text="insert text act" />
 
     <com.vanniktech.emoji.EmojiEditText
         android:id="@+id/etEmoji"

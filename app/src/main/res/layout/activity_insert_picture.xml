@@ -31,21 +31,21 @@
         android:layout_alignParentEnd="true"
         android:text="insert Picture" />
 
-    <Button
-        android:id="@+id/reverseVideoBtnBtn"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/selectVideoBtn"
-        android:layout_marginTop="30dp"
-        android:layout_marginEnd="30dp"
-        android:text="reverse video act" />
+<!--    <Button-->
+<!--        android:id="@+id/reverseVideoBtnBtn"-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:layout_below="@id/selectVideoBtn"-->
+<!--        android:layout_marginTop="30dp"-->
+<!--        android:layout_marginEnd="30dp"-->
+<!--        android:text="reverse video act" />-->
 
     <Button
         android:id="@+id/insertEmojiActBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@id/insertPictureBtn"
-        android:layout_alignParentEnd="true"
+        android:layout_alignParentStart="true"
         android:layout_marginTop="30dp"
         android:text="Insert Emoji Act" />
 

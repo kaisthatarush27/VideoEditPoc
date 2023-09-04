@@ -40,12 +40,14 @@ class InsertEmojiActivity : AppCompatActivity() {
     lateinit var exoPlayer: ExoPlayer
     private var outputFilePath: String? = null
     var emojiFilePath: String? = null
+
+    @OptIn(androidx.media3.common.util.UnstableApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityInsertEmojiBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        initExoPlayer()
+        //initExoPlayer()
 
         binding.insertEmojiBtn.setOnClickListener {
             if (binding.etEmoji.text!!.isEmpty()) {
@@ -55,6 +57,9 @@ class InsertEmojiActivity : AppCompatActivity() {
             insertEmoji()
         }
 
+        binding.insertTextActBtn.setOnClickListener {
+            startActivity(Intent(this, InsertTextActivity::class.java))
+        }
         val emojiPopup =
             EmojiPopup.Builder.fromRootView(binding.insertGraphicRl).build(binding.etEmoji)
 

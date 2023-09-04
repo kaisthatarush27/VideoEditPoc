@@ -78,9 +78,9 @@ class InsertPictureActivity : AppCompatActivity() {
 //            ).show()
 //        }
 
-        binding.reverseVideoBtnBtn.setOnClickListener {
-            startActivity(Intent(this, MainActivity::class.java))
-        }
+//        binding.reverseVideoBtnBtn.setOnClickListener {
+//            startActivity(Intent(this, MainActivity::class.java))
+//        }
     }
 
     private var imageLauncher =
