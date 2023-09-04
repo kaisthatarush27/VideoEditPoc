@@ -70,31 +70,6 @@ class InsertGraphicActivity : AppCompatActivity() {
             selectVideoLauncherUsingFfmpeg.launch("video/*")
         }
 
-        binding.insertEmojiBtn.setOnClickListener {
-            if (input_video_uri_media != null) {
-                insertEmoji()
-            } else {
-                Toast.makeText(this, "Please upload the video", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-        }
-
-        val emojiPopup =
-            EmojiPopup.Builder.fromRootView(binding.insertGraphicRl).build(binding.etEmoji)
-
-        binding.btnEmojis.setOnClickListener {
-            emojiPopup.toggle()
-        }
-        exoPlayer = ExoPlayer.Builder(this).build()
-        binding.playerView.player = exoPlayer
-        binding.saveVideo.setOnClickListener {
-            if (input_video_uri_ffmpeg != null) {
-                //passing filename
-                saveVideoLauncher.launch("result")
-            } else Toast.makeText(
-                this@InsertGraphicActivity, "Please upload video", Toast.LENGTH_LONG
-            ).show()
-        }
 
         binding.insertGraphicBtn.setOnClickListener {
             if (ContextCompat.checkSelfPermission(
@@ -120,89 +95,6 @@ class InsertGraphicActivity : AppCompatActivity() {
 
     }
 
-    @OptIn(UnstableApi::class)
-    val emojiLauncher =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode != Activity.RESULT_OK && result.data == null) {
-                return@registerForActivityResult
-            }
-            input_video_uri_media = result.data!!.data.toString()
-            Log.d("gamedia", "input_video_uri_media: $input_video_uri_media")
-            val prefs = getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
-            val editor = prefs.edit()
-            editor.putString("inputVideoUriMedia", input_video_uri_media)
-            editor.apply()
-            val mediaItem = MediaItem.fromUri(input_video_uri_media!!.toUri())
-            Log.d("gamedia", "mediaItem: $mediaItem")
-
-            Toast.makeText(this, "mediaItemLoadSuccess: $mediaItem", Toast.LENGTH_SHORT).show()
-
-            exoPlayer.setMediaItem(mediaItem)
-            exoPlayer.prepare()
-            exoPlayer.play()
-            exoPlayer.setVideoEffects(createVideoEffects())
-            createTransformation(mediaItem)
-
-        }
-
-
-    @OptIn(UnstableApi::class)
-    private fun createOverlayEffect(): OverlayEffect? {
-        val overLaysBuilder: ImmutableList.Builder<TextureOverlay> = ImmutableList.builder()
-        val overlaySettings = OverlaySettings.Builder().build()
-
-        val getEmoji = binding.etEmoji.text
-        val overlayEmoji = SpannableString(getEmoji)
-        overlayEmoji.setSpan(
-            ForegroundColorSpan(Color.BLUE),
-            0,
-            overlayEmoji.length,
-            Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-        )
-        val emojiTextureOverlay: TextureOverlay =
-            TextOverlay.createStaticTextOverlay(overlayEmoji, overlaySettings)
-        overLaysBuilder.add(emojiTextureOverlay)
-
-        val overlays: ImmutableList<TextureOverlay> = overLaysBuilder.build()
-        return if (overlays.isEmpty()) null else OverlayEffect(overlays)
-    }
-
-
-    private fun createVideoEffects(): ImmutableList<Effect> {
-        val effects = ImmutableList.Builder<Effect>()
-        val overlayEffect: OverlayEffect = createOverlayEffect()!!
-        effects.add(overlayEffect)
-        return effects.build()
-    }
-
-    @OptIn(UnstableApi::class)
-    private fun createTransformation(mediaItem: MediaItem) {
-        val request = TransformationRequest.Builder().setVideoMimeType(MimeTypes.VIDEO_H264).build()
-        val transformerListener: Transformer.Listener = object : Transformer.Listener {
-            override fun onCompleted(composition: Composition, result: ExportResult) {
-                Log.d("vcas", "success")
-                Toast.makeText(this@InsertGraphicActivity, "success: $result", Toast.LENGTH_SHORT)
-                    .show()
-            }
-
-            override fun onError(
-                composition: Composition, result: ExportResult, exception: ExportException
-            ) {
-                Log.d("vcae", "fail")
-            }
-        }
-        val transformer = Transformer.Builder(this).setTransformationRequest(request)
-            .addListener(transformerListener).build()
-        val filePath: String =
-            createExternalCacheFile("transformer.mp4").absolutePath
-        transformer.start(mediaItem, filePath)
-    }
-
-    private fun insertEmoji() {
-        val intent = Intent(Intent.ACTION_PICK)
-        intent.type = "video/*"
-        emojiLauncher.launch(intent)
-    }
 
     override fun onRequestPermissionsResult(
         requestCode: Int, permissions: Array<out String>, grantResults: IntArray
@@ -334,40 +226,10 @@ class InsertGraphicActivity : AppCompatActivity() {
         }
 
 
-    private val saveVideoLauncher =
-        registerForActivityResult(ActivityResultContracts.CreateDocument("video/mp4")) {
-            it?.let {
-                val out = contentResolver.openOutputStream(it)
-                val ip: InputStream = FileInputStream(input_video_uri_ffmpeg)
-
-                //com.google.common.io.ByteStreams, also provides a direct method to copy
-                // all bytes from the input stream to the output stream. Does not close or
-                // flush either stream.
-                // copy(ip,out!!)
-
-                out?.let {
-                    val buffer = ByteArray(1024)
-                    var read: Int
-                    while (ip.read(buffer).also { read = it } != -1) {
-                        out.write(buffer, 0, read)
-                    }
-                    ip.close()
-                    // write the output file (You have now copied the file)
-                    out.flush()
-                    out.close()
-                }
-            }
-        }
-
-
     private val selectVideoLauncherUsingFfmpeg =
         registerForActivityResult(ActivityResultContracts.GetContent()) {
             it?.let {
                 input_video_uri_ffmpeg = FFmpegKitConfig.getSafParameterForRead(this, it)
-                val prefs = getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
-                val editor = prefs.edit()
-                editor.putString("inputVideoUri", input_video_uri_ffmpeg)
-                editor.apply()
                 Toast.makeText(
                     this, "video loaded successfully: $input_video_uri_ffmpeg", Toast.LENGTH_SHORT
                 ).show()
@@ -382,12 +244,4 @@ class InsertGraphicActivity : AppCompatActivity() {
         return file
     }
 
-    override fun onResume() {
-        super.onResume()
-        val prefs = getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
-        input_video_uri_ffmpeg = prefs.getString("inputVideoUri", null)
-        input_video_uri_media = prefs.getString("inputVideoUriMedia", null)
-        Log.d("resumeita", "videoUri: $input_video_uri_ffmpeg")
-        Log.d("resumeitamedia", "videoMediaUri: $input_video_uri_media")
-    }
 }
