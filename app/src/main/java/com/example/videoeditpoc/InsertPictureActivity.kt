@@ -69,14 +69,14 @@ class InsertPictureActivity : AppCompatActivity() {
             }
         }
 
-        binding.saveVideo.setOnClickListener {
-            if (input_video_uri_ffmpeg != null) {
-                //passing filename
-                saveVideoLauncher.launch("VID-${System.currentTimeMillis() / 1000}")
-            } else Toast.makeText(
-                this@InsertPictureActivity, "Please upload video", Toast.LENGTH_LONG
-            ).show()
-        }
+//        binding.saveVideo.setOnClickListener {
+//            if (input_video_uri_ffmpeg != null) {
+//                //passing filename
+//                saveVideoLauncher.launch("VID-${System.currentTimeMillis() / 1000}")
+//            } else Toast.makeText(
+//                this@InsertPictureActivity, "Please upload video", Toast.LENGTH_LONG
+//            ).show()
+//        }
 
         binding.reverseVideoBtnBtn.setOnClickListener {
             startActivity(Intent(this, MainActivity::class.java))
@@ -162,10 +162,6 @@ class InsertPictureActivity : AppCompatActivity() {
         registerForActivityResult(ActivityResultContracts.GetContent()) {
             it?.let {
                 input_video_uri_ffmpeg = FFmpegKitConfig.getSafParameterForRead(this, it)
-//                val prefs = getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
-//                val editor = prefs.edit()
-//                editor.putString("inputVideoUri", input_video_uri_ffmpeg)
-//                editor.apply()
                 Toast.makeText(
                     this,
                     "video loaded successfully: $input_video_uri_ffmpeg",
@@ -174,37 +170,30 @@ class InsertPictureActivity : AppCompatActivity() {
             }
         }
 
-//    override fun onResume() {
-//        super.onResume()
-//        val prefs = getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
-//        input_video_uri_ffmpeg = prefs.getString("inputVideoUri", null)
-//        Log.d("resumeita", "videoUri: $input_video_uri_ffmpeg")
-//    }
-
-    private val saveVideoLauncher =
-        registerForActivityResult(ActivityResultContracts.CreateDocument(MimeTypes.VIDEO_H264)) {
-            it?.let {
-                val out = contentResolver.openOutputStream(it)
-                val ip: InputStream = FileInputStream(input_video_uri_ffmpeg)
-
-                //com.google.common.io.ByteStreams, also provides a direct method to copy
-                // all bytes from the input stream to the output stream. Does not close or
-                // flush either stream.
-                // copy(ip,out!!)
-
-                out?.let {
-                    val buffer = ByteArray(1024)
-                    var read: Int
-                    while (ip.read(buffer).also { read = it } != -1) {
-                        out.write(buffer, 0, read)
-                    }
-                    ip.close()
-                    // write the output file (You have now copied the file)
-//                    out.flush()
-                    out.close()
-                }
-            }
-        }
+//    private val saveVideoLauncher =
+//        registerForActivityResult(ActivityResultContracts.CreateDocument("video/mp4")) {
+//            it?.let {
+//                val out = contentResolver.openOutputStream(it)
+//                val ip: InputStream = FileInputStream(input_video_uri_ffmpeg)
+//
+//                //com.google.common.io.ByteStreams, also provides a direct method to copy
+//                // all bytes from the input stream to the output stream. Does not close or
+//                // flush either stream.
+//                // copy(ip,out!!)
+//
+//                out?.let {
+//                    val buffer = ByteArray(1024)
+//                    var read: Int
+//                    while (ip.read(buffer).also { read = it } != -1) {
+//                        out.write(buffer, 0, read)
+//                    }
+//                    ip.close()
+//                    // write the output file (You have now copied the file)
+////                    out.flush()
+//                    out.close()
+//                }
+//            }
+//        }
 
 
     private fun insertImage() {

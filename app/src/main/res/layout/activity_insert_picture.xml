@@ -5,15 +5,21 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/gradient_relative_layout"
-    android:gravity="center"
     tools:context=".MainActivity">
 
+    <TextView
+        android:id="@+id/insertPictureTv"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="Insert Picture Screen"
+        android:textSize="30sp" />
 
     <Button
         android:id="@+id/selectVideoBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
+        android:layout_below="@id/insertPictureTv"
         android:layout_marginEnd="30dp"
         android:text="Select Video" />
 
@@ -21,8 +27,8 @@
         android:id="@+id/insertPictureBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:layout_toEndOf="@id/selectVideoBtn"
+        android:layout_below="@id/insertPictureTv"
+        android:layout_alignParentEnd="true"
         android:text="insert Picture" />
 
     <Button
@@ -35,19 +41,11 @@
         android:text="reverse video act" />
 
     <Button
-        android:id="@+id/saveVideo"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/insertPictureBtn"
-        android:layout_marginTop="30dp"
-        android:layout_toEndOf="@id/reverseVideoBtnBtn"
-        android:text="Save Video" />
-
-    <Button
         android:id="@+id/insertEmojiActBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/saveVideo"
+        android:layout_below="@id/insertPictureBtn"
+        android:layout_alignParentEnd="true"
         android:layout_marginTop="30dp"
         android:text="Insert Emoji Act" />
 
