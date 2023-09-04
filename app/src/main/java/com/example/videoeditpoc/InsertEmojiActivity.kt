@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.provider.MediaStore
 import android.text.SpannableString
 import android.util.Log
 import android.widget.Toast
@@ -14,7 +15,6 @@ import androidx.media3.common.Effect
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.common.util.Util
 import androidx.media3.effect.OverlayEffect
 import androidx.media3.effect.OverlaySettings
 import androidx.media3.effect.TextOverlay
@@ -35,10 +35,10 @@ import java.io.IOException
 
 class InsertEmojiActivity : AppCompatActivity() {
     private lateinit var binding: ActivityInsertEmojiBinding
-    private var input_video_uri_media: String? = null
+    private var input_video_uri_media: Uri? = null
     lateinit var exoPlayer: ExoPlayer
     private var outputFilePath: String? = null
-
+    var emojiFilePath: String? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityInsertEmojiBinding.inflate(layoutInflater)
@@ -80,7 +80,7 @@ class InsertEmojiActivity : AppCompatActivity() {
             if (result.resultCode != Activity.RESULT_OK && result.data == null) {
                 return@registerForActivityResult
             }
-            input_video_uri_media = result.data!!.data.toString()
+            input_video_uri_media = result.data!!.data
             Log.d("gamedia", "input_video_uri_media: $input_video_uri_media")
 
 //            val prefs = getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
@@ -88,9 +88,25 @@ class InsertEmojiActivity : AppCompatActivity() {
 //            editor.putString("inputVideoUriMedia", input_video_uri_media!!.toString())
 //            editor.apply()
 
+            if (input_video_uri_media != null && "content" == input_video_uri_media!!.scheme) {
+                val cursor = this.contentResolver.query(
+                    input_video_uri_media!!,
+                    arrayOf(MediaStore.Images.ImageColumns.DATA),
+                    null,
+                    null,
+                    null
+                )
+                cursor!!.moveToFirst()
+                emojiFilePath = cursor.getString(0)
+                Log.d("filePathScheme", "filePath: $emojiFilePath")
+                cursor.close()
+            } else {
+                emojiFilePath = input_video_uri_media!!.path
+                Log.d("filePathwoScheme", "filePathwosc: $emojiFilePath ")
+            }
             val mediaItem = MediaItem.Builder()
                 .setUri(input_video_uri_media)
-                .setMimeType(MimeTypes.VIDEO_H265)
+                .setMimeType(MimeTypes.VIDEO_H264)
                 .build()
 
             Log.d("gamedia", "mediaItem: $mediaItem")
@@ -130,7 +146,7 @@ class InsertEmojiActivity : AppCompatActivity() {
 
     @OptIn(UnstableApi::class)
     private fun createTransformation(mediaItem: MediaItem) {
-        val request = TransformationRequest.Builder().setVideoMimeType(MimeTypes.VIDEO_H265).build()
+        val request = TransformationRequest.Builder().setVideoMimeType(MimeTypes.VIDEO_H264).build()
         val transformerListener: Transformer.Listener = object : Transformer.Listener {
             override fun onCompleted(composition: Composition, result: ExportResult) {
                 Log.d("vcas", "success")

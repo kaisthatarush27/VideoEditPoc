@@ -19,6 +19,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import androidx.media3.common.MimeTypes
 import com.arthenica.ffmpegkit.FFmpegKit
 import com.arthenica.ffmpegkit.FFmpegKitConfig
 import com.example.videoeditpoc.databinding.ActivityInsertPictureBinding
@@ -161,10 +162,10 @@ class InsertPictureActivity : AppCompatActivity() {
         registerForActivityResult(ActivityResultContracts.GetContent()) {
             it?.let {
                 input_video_uri_ffmpeg = FFmpegKitConfig.getSafParameterForRead(this, it)
-                val prefs = getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
-                val editor = prefs.edit()
-                editor.putString("inputVideoUri", input_video_uri_ffmpeg)
-                editor.apply()
+//                val prefs = getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
+//                val editor = prefs.edit()
+//                editor.putString("inputVideoUri", input_video_uri_ffmpeg)
+//                editor.apply()
                 Toast.makeText(
                     this,
                     "video loaded successfully: $input_video_uri_ffmpeg",
@@ -173,15 +174,15 @@ class InsertPictureActivity : AppCompatActivity() {
             }
         }
 
-    override fun onResume() {
-        super.onResume()
-        val prefs = getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
-        input_video_uri_ffmpeg = prefs.getString("inputVideoUri", null)
-        Log.d("resumeita", "videoUri: $input_video_uri_ffmpeg")
-    }
+//    override fun onResume() {
+//        super.onResume()
+//        val prefs = getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
+//        input_video_uri_ffmpeg = prefs.getString("inputVideoUri", null)
+//        Log.d("resumeita", "videoUri: $input_video_uri_ffmpeg")
+//    }
 
     private val saveVideoLauncher =
-        registerForActivityResult(ActivityResultContracts.CreateDocument("video/mp4")) {
+        registerForActivityResult(ActivityResultContracts.CreateDocument(MimeTypes.VIDEO_H264)) {
             it?.let {
                 val out = contentResolver.openOutputStream(it)
                 val ip: InputStream = FileInputStream(input_video_uri_ffmpeg)
@@ -199,7 +200,7 @@ class InsertPictureActivity : AppCompatActivity() {
                     }
                     ip.close()
                     // write the output file (You have now copied the file)
-                    out.flush()
+//                    out.flush()
                     out.close()
                 }
             }

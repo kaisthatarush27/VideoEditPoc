@@ -7,20 +7,27 @@
     android:background="@drawable/gradient_relative_layout"
     tools:context=".MainActivity">
 
+    <TextView
+        android:id="@+id/insertTextTv"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="Insert Text Screen"
+        android:textSize="30sp" />
 
     <Button
         android:id="@+id/selectVideoBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
+        android:layout_below="@id/insertTextTv"
         android:text="Select Video" />
 
     <Button
         android:id="@+id/insertGraphicActivityBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="30dp"
-        android:layout_toEndOf="@id/selectVideoBtn"
+        android:layout_below="@id/insertTextTv"
+        android:layout_alignParentEnd="true"
         android:text="Insert graphic act" />
 
     <Button
@@ -37,6 +44,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@id/exoPlayer"
+        android:textColor="#FF5733"
         android:layout_marginTop="30dp"
         android:background="@drawable/edit_text_bg"
         android:hint="@string/enter_the_text_to_show_on_the_video"
