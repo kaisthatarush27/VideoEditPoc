@@ -5,6 +5,7 @@ import android.app.ProgressDialog
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.os.Environment
 import android.provider.MediaStore
 import android.text.SpannableString
 import android.util.Log
@@ -33,6 +34,8 @@ import com.google.common.collect.ImmutableList
 import com.vanniktech.emoji.EmojiPopup
 import java.io.File
 import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.Date
 
 class InsertEmojiActivity : AppCompatActivity() {
     private lateinit var binding: ActivityInsertEmojiBinding
@@ -179,8 +182,7 @@ class InsertEmojiActivity : AppCompatActivity() {
             ).build()
         val transformer = Transformer.Builder(this).setTransformationRequest(request)
             .addListener(transformerListener).build()
-        outputFilePath =
-            createExternalCacheFile(System.currentTimeMillis().toString() + ".mp4").absolutePath
+        outputFilePath = getOutputFilePath()
         transformer.start(inputEditedMediaItem, outputFilePath!!)
     }
 
@@ -190,6 +192,30 @@ class InsertEmojiActivity : AppCompatActivity() {
         check(!(file.exists() && !file.delete())) { "Could not delete the previous export output file" }
         check(file.createNewFile()) { "Could not create the export output file" }
         return file
+    }
+
+    private fun getOutputFilePath(): String? {
+
+        val currentTimeMillis = System.currentTimeMillis()
+        val today = Date(currentTimeMillis)
+        val dateFormat = SimpleDateFormat("yyyyMMdd_HHmmss")
+        val fileName: String = "media3_" + dateFormat.format(today) + ".mp4"
+
+        val documentsDirectory =
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES).absoluteFile
+        Log.d("itadocdir", "getDocDirName:$documentsDirectory")
+        val mediaThreeDirectory = File(documentsDirectory, "Media3")
+        if (!mediaThreeDirectory.exists()) {
+            mediaThreeDirectory.mkdir()
+        }
+        val file = File(mediaThreeDirectory, fileName)
+
+
+        file.createNewFile()
+        println("No file found file created ${file.absolutePath}")
+
+
+        return file.absolutePath
     }
 
 }

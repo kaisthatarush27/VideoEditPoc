@@ -1,55 +1,33 @@
 package com.example.videoeditpoc
 
 import android.Manifest
-import android.app.Activity
 import android.app.ProgressDialog
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Color
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
 import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
-import android.text.Spannable
-import android.text.SpannableString
-import android.text.style.ForegroundColorSpan
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
-import androidx.media3.common.Effect
-import androidx.media3.common.MediaItem
-import androidx.media3.common.MimeTypes
-import androidx.media3.common.util.UnstableApi
-import androidx.media3.effect.OverlayEffect
-import androidx.media3.effect.OverlaySettings
-import androidx.media3.effect.TextOverlay
-import androidx.media3.effect.TextureOverlay
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.transformer.Composition
-import androidx.media3.transformer.ExportException
-import androidx.media3.transformer.ExportResult
-import androidx.media3.transformer.TransformationRequest
-import androidx.media3.transformer.Transformer
 import com.arthenica.ffmpegkit.FFmpegKit
 import com.arthenica.ffmpegkit.FFmpegKitConfig
 import com.example.videoeditpoc.databinding.ActivityInsertGraphicBinding
-import com.google.common.collect.ImmutableList
-import com.vanniktech.emoji.EmojiPopup
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.File
-import java.io.FileInputStream
 import java.io.IOException
-import java.io.InputStream
+import java.text.SimpleDateFormat
+import java.util.Date
 
 
 class InsertGraphicActivity : AppCompatActivity() {
@@ -60,6 +38,7 @@ class InsertGraphicActivity : AppCompatActivity() {
     private var gifUri: Uri? = null
     var filePath: String? = null
     lateinit var exoPlayer: ExoPlayer
+    private var outputFilePath: String? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityInsertGraphicBinding.inflate(layoutInflater)
@@ -72,6 +51,10 @@ class InsertGraphicActivity : AppCompatActivity() {
 
 
         binding.insertGraphicBtn.setOnClickListener {
+            if (input_video_uri_ffmpeg == null) {
+                Toast.makeText(this, "Select video", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
             if (ContextCompat.checkSelfPermission(
                     this, Manifest.permission.READ_EXTERNAL_STORAGE
                 ) == PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(
@@ -173,7 +156,7 @@ class InsertGraphicActivity : AppCompatActivity() {
                     //resultant video. By this we can apply as many effects as we want in a single video.
                     //Actually there are multiple videos being formed in storage but while using app it
                     //feels like we are doing manipulations in only one video
-                    input_video_uri_ffmpeg = filePath
+                    outputFilePath = filePath
                     Log.d("ffmpeg", "execInputVideoUri: $input_video_uri_ffmpeg")
                     //play the result video in VideoView
                     progressDialog.dismiss()
@@ -196,6 +179,11 @@ class InsertGraphicActivity : AppCompatActivity() {
 
     private var gifLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+
+            if (result.resultCode != RESULT_OK) {
+                Toast.makeText(this, "Select a video", Toast.LENGTH_SHORT).show()
+                return@registerForActivityResult
+            }
             if (result.resultCode == RESULT_OK) {
                 gifUri = result.data!!.data
                 Log.d("gifuri", "gifUri: $gifUri")
@@ -216,12 +204,10 @@ class InsertGraphicActivity : AppCompatActivity() {
 //                val folder = cacheDir
 //                val file = File(folder, System.currentTimeMillis().toString() + ".mp4")
 
-                val newFilePath: String = createExternalCacheFile(
-                    System.currentTimeMillis().toString() + ".mp4"
-                ).absolutePath
+                outputFilePath = getOutputFilePath()
                 val command =
-                    "-y -i $input_video_uri_ffmpeg -stream_loop -1 -i ${Uri.fromFile(File(filePath!!))} -filter_complex [0]overlay=x=0:y=0:shortest=1[out] -map [out] -map 0:a? $newFilePath"
-                executeFfmpegCommand(command, newFilePath)
+                    "-y -i $input_video_uri_ffmpeg -stream_loop -1 -i ${Uri.fromFile(File(filePath!!))} -filter_complex [0]overlay=x=0:y=0:shortest=1[out] -map [out] -map 0:a? $outputFilePath"
+                executeFfmpegCommand(command, outputFilePath!!)
             }
         }
 
@@ -242,6 +228,30 @@ class InsertGraphicActivity : AppCompatActivity() {
         check(!(file.exists() && !file.delete())) { "Could not delete the previous export output file" }
         check(file.createNewFile()) { "Could not create the export output file" }
         return file
+    }
+
+    private fun getOutputFilePath(): String? {
+
+        val currentTimeMillis = System.currentTimeMillis()
+        val today = Date(currentTimeMillis)
+        val dateFormat = SimpleDateFormat("yyyyMMdd_HHmmss")
+        val fileName: String = "media3_" + dateFormat.format(today) + ".mp4"
+
+        val documentsDirectory =
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES).absoluteFile
+        Log.d("itadocdir", "getDocDirName:$documentsDirectory")
+        val mediaThreeDirectory = File(documentsDirectory, "Media3")
+        if (!mediaThreeDirectory.exists()) {
+            mediaThreeDirectory.mkdir()
+        }
+        val file = File(mediaThreeDirectory, fileName)
+
+
+        file.createNewFile()
+        println("No file found file created ${file.absolutePath}")
+
+
+        return file.absolutePath
     }
 
 }

@@ -9,6 +9,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
 import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
@@ -29,6 +30,8 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
 import java.io.InputStream
+import java.text.SimpleDateFormat
+import java.util.Date
 import kotlin.math.abs
 
 class InsertPictureActivity : AppCompatActivity() {
@@ -37,6 +40,7 @@ class InsertPictureActivity : AppCompatActivity() {
     val handler = Handler(Looper.getMainLooper())
     private var imageUri: Uri? = null
     var imageFilePath: String? = null
+    private var outputFilePath: String? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityInsertPictureBinding.inflate(layoutInflater)
@@ -52,6 +56,11 @@ class InsertPictureActivity : AppCompatActivity() {
         }
 
         binding.insertPictureBtn.setOnClickListener {
+
+            if (input_video_uri_ffmpeg == null) {
+                Toast.makeText(this, "Select video", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
             if (ContextCompat.checkSelfPermission(
                     this, Manifest.permission.READ_EXTERNAL_STORAGE
                 ) == PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(
@@ -105,9 +114,7 @@ class InsertPictureActivity : AppCompatActivity() {
 //                val folder = cacheDir
 //                val file = File(folder, System.currentTimeMillis().toString() + ".mp4")
 
-                val newFilePath: String = createExternalCacheFile(
-                    System.currentTimeMillis().toString() + ".mp4"
-                ).absolutePath
+                outputFilePath = getOutputFilePath()
                 val command =
                     "-y -i $input_video_uri_ffmpeg -i ${
                         Uri.fromFile(
@@ -115,8 +122,8 @@ class InsertPictureActivity : AppCompatActivity() {
                                 imageFilePath!!
                             )
                         )
-                    } -filter_complex \"[0:v][1:v] overlay=25:25:enable='between(t,0,20)'\" -pix_fmt yuv420p -c:a copy $newFilePath"
-                executeFfmpegCommand(command, newFilePath)
+                    } -filter_complex \"[0:v][1:v] overlay=25:25:enable='between(t,0,20)'\" -pix_fmt yuv420p -c:a copy $outputFilePath"
+                executeFfmpegCommand(command, outputFilePath!!)
             }
         }
 
@@ -226,7 +233,7 @@ class InsertPictureActivity : AppCompatActivity() {
                     //resultant video. By this we can apply as many effects as we want in a single video.
                     //Actually there are multiple videos being formed in storage but while using app it
                     //feels like we are doing manipulations in only one video
-                    input_video_uri_ffmpeg = filePath
+                    outputFilePath = filePath
                     //play the result video in VideoView
                     progressDialog.dismiss()
                     Toast.makeText(this@InsertPictureActivity, "Filter Applied", Toast.LENGTH_SHORT)
@@ -255,5 +262,29 @@ class InsertPictureActivity : AppCompatActivity() {
         check(!(file.exists() && !file.delete())) { "Could not delete the previous export output file" }
         check(file.createNewFile()) { "Could not create the export output file" }
         return file
+    }
+
+    private fun getOutputFilePath(): String? {
+
+        val currentTimeMillis = System.currentTimeMillis()
+        val today = Date(currentTimeMillis)
+        val dateFormat = SimpleDateFormat("yyyyMMdd_HHmmss")
+        val fileName: String = "media3_" + dateFormat.format(today) + ".mp4"
+
+        val documentsDirectory =
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES).absoluteFile
+        Log.d("itadocdir", "getDocDirName:$documentsDirectory")
+        val mediaThreeDirectory = File(documentsDirectory, "Media3")
+        if (!mediaThreeDirectory.exists()) {
+            mediaThreeDirectory.mkdir()
+        }
+        val file = File(mediaThreeDirectory, fileName)
+
+
+        file.createNewFile()
+        println("No file found file created ${file.absolutePath}")
+
+
+        return file.absolutePath
     }
 }
