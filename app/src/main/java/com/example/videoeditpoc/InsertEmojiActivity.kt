@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.ProgressDialog
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
@@ -12,16 +13,15 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.OptIn
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.media3.common.Effect
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.effect.OverlayEffect
-import androidx.media3.effect.OverlaySettings
 import androidx.media3.effect.TextOverlay
 import androidx.media3.effect.TextureOverlay
-import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.transformer.Composition
 import androidx.media3.transformer.EditedMediaItem
 import androidx.media3.transformer.Effects
@@ -33,24 +33,21 @@ import com.example.videoeditpoc.databinding.ActivityInsertEmojiBinding
 import com.google.common.collect.ImmutableList
 import com.vanniktech.emoji.EmojiPopup
 import java.io.File
-import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
 
 class InsertEmojiActivity : AppCompatActivity() {
     private lateinit var binding: ActivityInsertEmojiBinding
     private var input_video_uri_media: Uri? = null
-    lateinit var exoPlayer: ExoPlayer
     private var outputFilePath: String? = null
     var emojiFilePath: String? = null
 
+    @RequiresApi(Build.VERSION_CODES.M)
     @OptIn(androidx.media3.common.util.UnstableApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityInsertEmojiBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-        //initExoPlayer()
 
         binding.insertEmojiBtn.setOnClickListener {
             if (binding.etEmoji.text!!.isEmpty()) {
@@ -69,10 +66,6 @@ class InsertEmojiActivity : AppCompatActivity() {
         binding.btnEmojis.setOnClickListener {
             emojiPopup.toggle()
         }
-    }
-
-    private fun initExoPlayer() {
-        exoPlayer = ExoPlayer.Builder(this).build()
     }
 
     @OptIn(androidx.media3.common.util.UnstableApi::class)
@@ -113,13 +106,7 @@ class InsertEmojiActivity : AppCompatActivity() {
                 .build()
 
             Log.d("gamedia", "mediaItem: $mediaItem")
-//            exoPlayer.setMediaItem(mediaItem)
-//            exoPlayer.prepare()
-//            exoPlayer.play()
-//            exoPlayer.setVideoEffects(createVideoEffects())
             createTransformation(mediaItem)
-
-            // binding.etEmoji.text!!.clear()
 
 
         }
@@ -157,7 +144,6 @@ class InsertEmojiActivity : AppCompatActivity() {
         val transformerListener: Transformer.Listener = object : Transformer.Listener {
             override fun onCompleted(composition: Composition, result: ExportResult) {
                 Log.d("vcas", "success")
-//                progressDialog.setMessage("success")
                 progressDialog.dismiss()
                 Toast.makeText(this@InsertEmojiActivity, "Filter Applied", Toast.LENGTH_SHORT)
                     .show()
@@ -168,7 +154,6 @@ class InsertEmojiActivity : AppCompatActivity() {
                 composition: Composition, result: ExportResult, exception: ExportException
             ) {
                 Log.d("vcae", "fail")
-//                progressDialog.setMessage("fail")
                 progressDialog.dismiss()
                 Toast.makeText(
                     this@InsertEmojiActivity, "Something Went Wrong!", Toast.LENGTH_SHORT
@@ -184,14 +169,6 @@ class InsertEmojiActivity : AppCompatActivity() {
             .addListener(transformerListener).build()
         outputFilePath = getOutputFilePath()
         transformer.start(inputEditedMediaItem, outputFilePath!!)
-    }
-
-    @Throws(IOException::class)
-    private fun createExternalCacheFile(fileName: String): File {
-        val file = File(externalCacheDir, fileName)
-        check(!(file.exists() && !file.delete())) { "Could not delete the previous export output file" }
-        check(file.createNewFile()) { "Could not create the export output file" }
-        return file
     }
 
     private fun getOutputFilePath(): String? {

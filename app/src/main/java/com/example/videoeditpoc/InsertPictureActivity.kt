@@ -12,7 +12,6 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
-import android.util.Base64
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -36,7 +35,6 @@ import androidx.media3.transformer.TransformationRequest
 import androidx.media3.transformer.Transformer
 import com.example.videoeditpoc.databinding.ActivityInsertPictureBinding
 import com.google.common.collect.ImmutableList
-import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
@@ -116,13 +114,6 @@ class InsertPictureActivity : AppCompatActivity() {
                 createTransformation(mediaItem, resultantBitmapFilePath)
             }
         }
-
-    private fun encodeImage(bm: Bitmap): String? {
-        val baos = ByteArrayOutputStream()
-        bm.compress(Bitmap.CompressFormat.PNG, 100, baos)
-        val b = baos.toByteArray()
-        return Base64.encodeToString(b, Base64.DEFAULT)
-    }
 
     private fun scaleDownImage(
         realImage: Bitmap, maxImageHeight: Float

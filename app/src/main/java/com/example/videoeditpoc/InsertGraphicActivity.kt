@@ -18,6 +18,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import com.arthenica.ffmpegkit.FFmpegKit
 import com.arthenica.ffmpegkit.FFmpegKitConfig
@@ -25,11 +26,10 @@ import com.example.videoeditpoc.databinding.ActivityInsertGraphicBinding
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.File
-import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
 
-
+@UnstableApi
 class InsertGraphicActivity : AppCompatActivity() {
     lateinit var binding: ActivityInsertGraphicBinding
     private var input_video_uri_ffmpeg: String? = null
@@ -121,44 +121,19 @@ class InsertGraphicActivity : AppCompatActivity() {
         gifLauncher.launch(intent)
     }
 
-    private fun getTime(seconds: Int): String {
-        val hr = seconds / 3600
-        val rem = seconds % 3600
-        val mn = rem / 60
-        val sec = rem % 60
-        return String.format("%02d", hr) + ":" + String.format(
-            "%02d", mn
-        ) + ":" + String.format("%02d", sec)
-    }
-
     private fun executeFfmpegCommand(exe: String, filePath: String) {
 
-        //creating the progress dialog
         val progressDialog = ProgressDialog(this@InsertGraphicActivity)
         progressDialog.setCancelable(false)
         progressDialog.setCanceledOnTouchOutside(false)
         progressDialog.show()
-
-        /*
-            Here, we have used he Async task to execute our query because if we use the regular method the progress dialog
-            won't be visible. This happens because the regular method and progress dialog uses the same thread to execute
-            and as a result only one is a allowed to work at a time.
-            By using we Async task we create a different thread which resolves the issue.
-         */
         FFmpegKit.executeAsync(exe, { session ->
             val returnCode = session.returnCode
             lifecycleScope.launch(Dispatchers.Main) {
                 if (returnCode.isValueSuccess) {
-                    //after successful execution of ffmpeg command,
-                    //again set up the video Uri in VideoView
                     Log.d("ffmpeg", "execFilePath: $filePath")
-                    //change the video_url to filePath, so that we could do more manipulations in the
-                    //resultant video. By this we can apply as many effects as we want in a single video.
-                    //Actually there are multiple videos being formed in storage but while using app it
-                    //feels like we are doing manipulations in only one video
                     outputFilePath = filePath
                     Log.d("ffmpeg", "execInputVideoUri: $input_video_uri_ffmpeg")
-                    //play the result video in VideoView
                     progressDialog.dismiss()
                     Toast.makeText(this@InsertGraphicActivity, "Filter Applied", Toast.LENGTH_SHORT)
                         .show()
@@ -201,8 +176,6 @@ class InsertGraphicActivity : AppCompatActivity() {
                 }
                 Log.d("", "Chosen path = $filePath")
                 Log.d("gifma", "gif : $gifUri")
-//                val folder = cacheDir
-//                val file = File(folder, System.currentTimeMillis().toString() + ".mp4")
 
                 outputFilePath = getOutputFilePath()
                 val command =
@@ -221,14 +194,6 @@ class InsertGraphicActivity : AppCompatActivity() {
                 ).show()
             }
         }
-
-    @Throws(IOException::class)
-    private fun createExternalCacheFile(fileName: String): File {
-        val file = File(externalCacheDir, fileName)
-        check(!(file.exists() && !file.delete())) { "Could not delete the previous export output file" }
-        check(file.createNewFile()) { "Could not create the export output file" }
-        return file
-    }
 
     private fun getOutputFilePath(): String? {
 
