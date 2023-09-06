@@ -16,10 +16,17 @@
         android:textSize="30sp" />
 
     <Button
-        android:id="@+id/insertTextBtn"
+        android:id="@+id/selectVideoBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@id/insertTextTv"
+        android:text="select video" />
+
+    <Button
+        android:id="@+id/insertTextBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/selectVideoBtn"
         android:text="insert text" />
 
     <Button

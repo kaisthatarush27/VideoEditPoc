@@ -1,15 +1,10 @@
 package com.example.videoeditpoc
 
-import android.app.Activity
 import android.app.ProgressDialog
 import android.content.Intent
 import android.graphics.Color
-import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
-import android.os.Handler
-import android.os.Looper
-import android.provider.MediaStore
 import android.text.Spannable
 import android.text.SpannableString
 import android.text.style.ForegroundColorSpan
@@ -24,7 +19,6 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.effect.OverlayEffect
 import androidx.media3.effect.TextOverlay
 import androidx.media3.effect.TextureOverlay
-import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.transformer.Composition
 import androidx.media3.transformer.EditedMediaItem
 import androidx.media3.transformer.Effects
@@ -35,7 +29,6 @@ import androidx.media3.transformer.Transformer
 import com.example.videoeditpoc.databinding.ActivityInsertTextBinding
 import com.google.common.collect.ImmutableList
 import java.io.File
-import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
 
@@ -43,77 +36,50 @@ import java.util.Date
 @UnstableApi
 class InsertTextActivity : AppCompatActivity() {
     lateinit var binding: ActivityInsertTextBinding
-    private var input_video_uri_ffmpeg: Uri? = null
+    private var input_video_uri_ffmpeg: String? = null
     private var outputFilePath: String? = null
-    var videoFilePath: String? = null
-    private var player: ExoPlayer? = null
-    private var playWhenReady = true
-    private var mediaItemIndex = 0
-    private var playbackPosition = 0L
-    private var currentItem = 0
-    val handler = Handler(Looper.getMainLooper())
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityInsertTextBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        binding.insertTextBtn.setOnClickListener {
-            if (binding.ediText.text.toString().isEmpty()) {
-                Toast.makeText(this, "enter text", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-            val intent = Intent(Intent.ACTION_PICK)
-            intent.type = "video/*"
-            selectVideoLauncherUsingFfmpeg.launch(intent)
+        binding.selectVideoBtn.setOnClickListener {
+            selectVideoLauncherUsingFfmpeg.launch("video/*")
         }
 
         binding.insertGraphicActivityBtn.setOnClickListener {
             startActivity(Intent(this, InsertGraphicActivity::class.java))
         }
 
-//        initExoPLayer()
+        binding.insertTextBtn.setOnClickListener {
+
+            if (input_video_uri_ffmpeg == null) {
+                Toast.makeText(this, "upload video", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            if (binding.ediText.text.toString().isEmpty()) {
+                Toast.makeText(this, "enter text", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            insertText()
+        }
     }
 
-    private fun initExoPLayer() {
-//        val renderFactory = DefaultRenderersFactory(this)
-//        renderFactory.setEnableDecoderFallback(true)
-        player = ExoPlayer.Builder(this).build()
-//        binding.exoPlayer.player = player
-
-
+    private fun insertText() {
+        val mediaItem = MediaItem.Builder().setUri(input_video_uri_ffmpeg).build()
+        createTransformation(mediaItem)
     }
 
     private val selectVideoLauncherUsingFfmpeg =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-
-            if (result.resultCode != Activity.RESULT_OK && result.data == null) {
-                return@registerForActivityResult
+        registerForActivityResult(ActivityResultContracts.GetContent()) {
+            it?.let {
+                input_video_uri_ffmpeg = it.toString()
+                Toast.makeText(
+                    this,
+                    "video loaded successfully: $input_video_uri_ffmpeg",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
-            input_video_uri_ffmpeg = result.data!!.data
-
-            Log.d("ita", "input_video_uri_ffmpeg: $input_video_uri_ffmpeg")
-            Toast.makeText(this, "mediaItemLoadSuccess:$input_video_uri_ffmpeg", Toast.LENGTH_SHORT)
-                .show()
-
-            if (input_video_uri_ffmpeg != null && "content" == input_video_uri_ffmpeg!!.scheme) {
-                val cursor = this.contentResolver.query(
-                    input_video_uri_ffmpeg!!,
-                    arrayOf(MediaStore.Images.ImageColumns.DATA),
-                    null,
-                    null,
-                    null
-                )
-                cursor!!.moveToFirst()
-                videoFilePath = cursor.getString(0)
-                Log.d("filePathScheme", "filePath: $videoFilePath")
-                cursor.close()
-            } else {
-                videoFilePath = input_video_uri_ffmpeg!!.path
-                Log.d("filePathwoScheme", "filePathwosc: $videoFilePath ")
-            }
-            val mediaItem = MediaItem.Builder().setUri(input_video_uri_ffmpeg).build()
-            createTransformation(mediaItem)
-
         }
 
 
